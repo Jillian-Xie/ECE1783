@@ -1,4 +1,4 @@
-clc; clear; 
+clc; clear; close all; 
 
 yuvInputFileName = 'foreman420_cif.yuv';
 yuvOutputFileName = 'foreman444_cif.yuv';
