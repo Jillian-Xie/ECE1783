@@ -2,6 +2,7 @@ clc; clear; close all;
 
 yuvInputFileName = 'foreman420_cif.yuv';
 YOnlyOutputPath = 'D:\ECE1783\A1\YOnly\';
+PlotOutputPath = 'Plots\';
 
 width  = 352;
 height = 288;
@@ -11,6 +12,8 @@ blockSize = 2;
 rgbOutputPath = ['D:\ECE1783\A1\rgbAfterAvgBlockSize', int2str(blockSize), '\'];
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
+YAvg = uint8(zeros(width, height, nFrame));
+PSNR = zeros(nFrame, 1);
 
 if ~exist(YOnlyOutputPath,'dir')
     mkdir(YOnlyOutputPath)
@@ -18,6 +21,10 @@ end
 
 if ~exist(rgbOutputPath,'dir')
     mkdir(rgbOutputPath)
+end
+
+if ~exist(PlotOutputPath,'dir')
+    mkdir(PlotOutputPath)
 end
 
 for i=1:nFrame
@@ -28,13 +35,19 @@ for i=1:nFrame
     fclose(fid);
     
     % part b, c, d
-    YAvg = replaceBlocksWithAvg(Y(:,:,i), uint32(blockSize), uint32(width), uint32(height));
+    YAvgFrame = replaceBlocksWithAvg(Y(:,:,i), uint32(blockSize), uint32(width), uint32(height));
     
-    Y(:,:,i) = uint8(YAvg);
+    PSNRFrame = psnr(YAvgFrame, Y(:, :, i));
+    PSNR(i, 1) = PSNRFrame;
+    
+    YAvg(:,:,i) = uint8(YAvgFrame);
 end
 
+plot(PSNR);
+saveas(gcf, fullfile(PlotOutputPath, ['PSNRYAvgBlockSize', int2str(blockSize), '.jpeg']));
+
 % convert it to rgb to verify
-[Yscale,Uscale,Vscale] = scaleYUV420To444(Y, U, V, width, height ,nFrame);
+[Yscale,Uscale,Vscale] = scaleYUV420To444(YAvg, U, V, width, height ,nFrame);
 [R,G,B]=YUV2RGB(Yscale, Uscale, Vscale, width, height ,nFrame);
 
 for i=1:nFrame
