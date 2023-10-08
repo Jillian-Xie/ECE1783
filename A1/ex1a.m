@@ -9,14 +9,7 @@ nFrame = 300;
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 [Yscale,Uscale,Vscale] = scaleYUV420To444(Y, U, V, width, height ,nFrame);
 
-outputFileExist = exist(yuvOutputFileName, 'file');
-
-if outputFileExist == 2
-    fid=fopen(yuvOutputFileName,'w');
-    fclose(fid);
-end
-
-fid=fopen(yuvOutputFileName,'a');
+fid = createOrClearFile(yuvOutputFileName);
 
 for i=1:nFrame
     fwrite(fid,uint8(Yscale(:,:,i)),'uchar');
