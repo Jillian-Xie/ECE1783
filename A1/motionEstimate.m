@@ -10,7 +10,7 @@ MVCell = cell(widthBlockNum, heightBlockNum);
 
 for widthBlockIndex = 1:widthBlockNum
     for heightBlockIndex = 1:heightBlockNum
-        [bestMAE, bestMV] = getBestMV(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize);
+        [bestMAE, bestMV, residualBlock] = getBestMV(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize);
         MVCell{widthBlockIndex, heightBlockIndex} = bestMV;
     end
 end
