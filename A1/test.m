@@ -1,0 +1,18 @@
+% test for getBestMV motionEstimate
+
+refFrame=[9 10 1 2
+          13 14 5 6
+          11 12 3 4
+          15 16 7 8];
+currentFrame=[1 2 3 4
+              5 6 7 8
+              9 10 11 12
+              13 14 15 16];
+widthBlockIndex = 1;
+heightBlockIndex = 1;
+r = 2;
+blockSize = 2;
+
+MVCell = motionEstimate(refFrame, currentFrame, blockSize, r);
+
+% [bestMAE, bestMV] = getBestMV(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize)
