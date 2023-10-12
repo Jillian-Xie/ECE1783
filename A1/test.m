@@ -12,7 +12,7 @@ widthBlockIndex = 1;
 heightBlockIndex = 1;
 r = 2;
 blockSize = 2;
+n = 1;
 
-MVCell = motionEstimate(refFrame, currentFrame, blockSize, r);
+[MVCell, approximatedResidualCell] = motionEstimate(refFrame,currentFrame,blockSize,r,n)
 
-% [bestMAE, bestMV] = getBestMV(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize)
