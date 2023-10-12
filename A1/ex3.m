@@ -5,7 +5,7 @@ MVOutputPath = 'MVOutput\';
 nFrame = uint32(300);
 width  = uint32(352);
 height = uint32(288);
-blockSize = 64;
+blockSize = 8;
 r = 2;
 
 if ~exist(MVOutputPath,'dir')
@@ -19,11 +19,11 @@ firstRefFrame(1:size(paddingY,1),1:size(paddingY,2)) = uint8(128);
 for currentFrameNum = 1:nFrame
     if currentFrameNum == 1
         MVCell = motionEstimate(firstRefFrame, paddingY(:,:,currentFrameNum), blockSize, r);
-        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.txt'];
-        writecell(MVCell,MVFilePath);
+        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+        save(MVFilePath, 'MVCell');
     else
         MVCell = motionEstimate(paddingY(:,:,currentFrameNum-1), paddingY(:,:,currentFrameNum), blockSize, r);
-        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.txt'];
-        writecell(MVCell,MVFilePath);
+        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+        save(MVFilePath, 'MVCell');
     end
 end
