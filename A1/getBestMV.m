@@ -1,4 +1,4 @@
-function [bestMAE, bestMV, residualBlock, approximatedResidualBlock] = getBestMV(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize,n)
+function [bestMAE, bestMV, residualBlock] = getBestMV(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize)
 bestMAE = Inf;
 bestMV = int32([0, 0]);
 currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame);
@@ -33,5 +33,3 @@ for mvX = -r:r
         end
     end
 end
-
-approximatedResidualBlock = round(residualBlock / (2^n)) * (2^n);
