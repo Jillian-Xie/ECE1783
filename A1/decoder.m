@@ -53,7 +53,7 @@ function decoder(nFrame, width, height, blockSize)
             end
         end
         
-        YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',i), '.yuv'];
+        YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
         fid = createOrClearFile(YOnlyFilePath);
         fwrite(fid,uint8(curFrame(:,:)),'uchar');
         fclose(fid);
