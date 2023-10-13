@@ -1,6 +1,6 @@
 function decoder(nFrame, width, height, blockSize)
     MVOutputPath = 'MVOutput\';
-    ResidualOutputPath = 'ResidualOutput\';
+    ResidualOutputPath = 'approximatedResidualOutput\';
     assert(exist(MVOutputPath,'dir') > 0);
     assert(exist(ResidualOutputPath,'dir') > 0);
     
@@ -25,7 +25,7 @@ function decoder(nFrame, width, height, blockSize)
         MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
         ResidualFilePath = [ResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
         load(MVFilePath, "MVCell");
-        load(ResidualFilePath, "ResidualCell");
+        load(ResidualFilePath, "approximatedResidualCell");
         
         curFrame = uint8(zeros(width, height));
         
@@ -35,7 +35,7 @@ function decoder(nFrame, width, height, blockSize)
                 horizontalOffset = cell1{1,1}(1);
                 verticalOffset = cell1{1,1}(2);
                 
-                cell2 = ResidualCell(i,j);
+                cell2 = approximatedResidualCell(i,j);
                 
                 for ii = 1:blockSize
                     for jj = 1:blockSize
@@ -47,7 +47,7 @@ function decoder(nFrame, width, height, blockSize)
                         end
                         
                         % current frame = MV in the ref frame + residual
-                        curFrame(horizontalIndex, verticalIndex) = refFrame(horizontalIndex + horizontalOffset, verticalIndex + verticalOffset) + cell2{1,1}(ii, jj);
+                        curFrame(horizontalIndex, verticalIndex) = uint8(int32(refFrame(horizontalIndex + horizontalOffset, verticalIndex + verticalOffset)) + cell2{1,1}(ii, jj));
                     end
                 end
             end
