@@ -47,16 +47,7 @@ plot(PSNR);
 saveas(gcf, fullfile(PlotOutputPath, ['PSNRYAvgBlockSize', int2str(blockSize), '.jpeg']));
 
 % convert it to rgb to verify
-[Yscale,Uscale,Vscale] = scaleYUV420To444(YAvg, U, V, width, height ,nFrame);
-[R,G,B]=YUV2RGB(Yscale, Uscale, Vscale, width, height ,nFrame);
-
-for i=1:nFrame
-    im(:,:,1)=R(:,:,i)';
-    im(:,:,2)=G(:,:,i)';
-    im(:,:,3)=B(:,:,i)';
-    Image=uint8(im);
-    imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
-end
+convertToRGBandDump(YAvg, U, V, width, height ,nFrame, rgbOutputPath);
 
 % helper function to slice Y into blocks and returns averaged Y within each block
 function YAvg = replaceBlocksWithAvg(Y, blockSize, width, height)
