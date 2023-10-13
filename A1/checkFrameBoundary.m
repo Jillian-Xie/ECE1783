@@ -1,7 +1,9 @@
-function flag = checkFrameBoundary(x, y, blockSize, frame)
-widthBlockNum = idivide(uint32(size(frame, 1)), uint32(blockSize), 'ceil');
-heightBlockNum = idivide(uint32(size(frame, 2)), uint32(blockSize), 'ceil');
-if x >= 1 && x <= widthBlockNum && y >= 1 && y <= heightBlockNum
+function flag = checkFrameBoundary(widthStart, heightStart, blockSize, frame)
+width = uint32(size(frame, 1));
+height = uint32(size(frame, 2));
+widthEnd = int32(widthStart + blockSize - 1);
+heightEnd = int32(heightStart + blockSize - 1);
+if widthStart >= 1 && widthEnd <= width && heightStart >= 1 && heightEnd <= height
     flag = 1;
 else
     flag = 0;

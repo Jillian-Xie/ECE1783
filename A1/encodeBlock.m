@@ -1,15 +1,15 @@
 function [bestMAE, bestMV, approximatedResidualBlock, reconstructedBlock] = encodeBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize,n)
 bestMAE = Inf;
 bestMV = int32([0, 0]);
-currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame);
+currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
 residualBlock = int32(currentBlock);
 referenceBlock(1:blockSize,1:blockSize) = int32(128);
 for mvX = -r:r
     for mvY = -r:r
-        refWidthBlockIndex = widthBlockIndex + mvX;
-        refHeightBlockIndex = heightBlockIndex + mvY;
-        if checkFrameBoundary(refWidthBlockIndex, refHeightBlockIndex, blockSize, refFrame) == 1
-            refBlock = getBlockContent(refWidthBlockIndex, refHeightBlockIndex, blockSize, refFrame);
+        refWidthPixelIndex = int32((widthBlockIndex-1)*blockSize + 1 + mvX);
+        refHeightPixelIndex = int32((heightBlockIndex-1)*blockSize + 1 + mvY);
+        if checkFrameBoundary(refWidthPixelIndex, refHeightPixelIndex, blockSize, refFrame) == 1
+            refBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, refFrame, mvX, mvY);
             mae = sum(abs(int32(currentBlock) - int32(refBlock)), "all") / numel(currentBlock);
             if mae < bestMAE
                 bestMAE = mae;
