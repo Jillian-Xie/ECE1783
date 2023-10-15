@@ -37,26 +37,19 @@ end
 paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
 firstRefFrame(1:size(paddingY,1),1:size(paddingY,2)) = uint8(128);
 absoluteResidualNoMC = zeros(width, height, nFrame);
+referenceFrame = firstRefFrame;
 
 for currentFrameNum = 1:nFrame
-    if currentFrameNum == 1
-        absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:width,1:height,currentFrameNum) - firstRefFrame(1:width,1:height)));
-        
-        [MVCell, approximatedResidualCell, reconstructedY] = motionEstimate(firstRefFrame, paddingY(:,:,currentFrameNum), blockSize, r, n);
-        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-        save(MVFilePath, 'MVCell');
-        approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-        save(approximatedResidualFilePath, 'approximatedResidualCell');
-    else
-        absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:width,1:height,currentFrameNum) - paddingY(1:width,1:height,currentFrameNum-1)));
-        
-        [MVCell, approximatedResidualCell, reconstructedY] = motionEstimate(paddingY(:,:,currentFrameNum-1), paddingY(:,:,currentFrameNum), blockSize, r, n);
-        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-        save(MVFilePath, 'MVCell');
-        approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-        save(approximatedResidualFilePath, 'approximatedResidualCell');
-    end
+    absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:width,1:height,currentFrameNum) - referenceFrame(1:width,1:height)));
+
+    [MVCell, approximatedResidualCell, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n);
+    referenceFrame = reconstructedY;
     
+    MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+    save(MVFilePath, 'MVCell');
+    approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+    save(approximatedResidualFilePath, 'approximatedResidualCell');
+
     YOnlyFilePath = [encoderReconstructionOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
     fid = createOrClearFile(YOnlyFilePath);
     fwrite(fid,uint8(reconstructedY(:,:)),'uchar');
