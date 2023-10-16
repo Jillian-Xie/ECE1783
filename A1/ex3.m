@@ -63,10 +63,10 @@ plotResidual(absoluteResidualNoMC, nFrame, absoluteResidualNoMCOutputPath);
 plotResidual(absoluteResidualWithMC, nFrame, absoluteResidualWithMCOutputPath);
 
 
-function plotResidual(absoluteResidualNoMC, nFrame, rgbOutputPath)
-    R = absoluteResidualNoMC;
-    G = absoluteResidualNoMC;
-    B = absoluteResidualNoMC;
+function plotResidual(Residual, nFrame, rgbOutputPath)
+    R = Residual;
+    G = Residual;
+    B = Residual;
     for i=1:nFrame
         im(:,:,1)=R(:,:,i)';
         im(:,:,2)=G(:,:,i)';
