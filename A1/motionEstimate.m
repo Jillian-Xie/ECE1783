@@ -1,4 +1,4 @@
-function [MVCell, approximatedResidualCell, reconstructedFrame] = motionEstimate(referenceFrame,currentFrame,blockSize,r,n)
+function [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = motionEstimate(referenceFrame,currentFrame,blockSize,r,n)
 
 width  = size(referenceFrame,1);
 height = size(referenceFrame,2);
@@ -8,6 +8,7 @@ heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
 MVCell = cell(widthBlockNum, heightBlockNum);
 approximatedResidualCell = cell(widthBlockNum, heightBlockNum);
+approximatedResidualFrame = uint8(zeros(width, height));
 reconstructedFrame = uint8(zeros(width, height));
 
 for widthBlockIndex = 1:widthBlockNum
@@ -15,6 +16,7 @@ for widthBlockIndex = 1:widthBlockNum
         [bestMAE, bestMV, approximatedResidualBlock, reconstructedBlock] = encodeBlock(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize,n);
         MVCell{widthBlockIndex, heightBlockIndex} = bestMV;
         approximatedResidualCell{widthBlockIndex, heightBlockIndex} = approximatedResidualBlock;
+        approximatedResidualFrame((widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize, (heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize) = approximatedResidualBlock;
         reconstructedFrame((widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize, (heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize) = reconstructedBlock;
     end
 end
