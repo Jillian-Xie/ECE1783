@@ -38,13 +38,16 @@ end
 paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
 firstRefFrame(1:size(paddingY,1),1:size(paddingY,2)) = uint8(128);
 absoluteResidualNoMC = zeros(width, height, nFrame);
+absoluteResidualWithMC = zeros(width, height, nFrame);
 referenceFrame = firstRefFrame;
 
 for currentFrameNum = 1:nFrame
     absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:width,1:height,currentFrameNum) - referenceFrame(1:width,1:height)));
 
-    [MVCell, approximatedResidualCell, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n,QP);
+    [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n, QP);
     referenceFrame = reconstructedY;
+    
+    absoluteResidualWithMC(:,:,currentFrameNum) = approximatedResidualFrame;
     
     MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
     save(MVFilePath, 'MVCell');
@@ -57,4 +60,18 @@ for currentFrameNum = 1:nFrame
     fclose(fid);
 end
 
-% convertToRGBandDump(absoluteResidualNoMC, U, V, width, height ,nFrame, absoluteResidualNoMCOutputPath);
+plotResidual(absoluteResidualNoMC, nFrame, absoluteResidualNoMCOutputPath);
+plotResidual(absoluteResidualWithMC, nFrame, absoluteResidualWithMCOutputPath);
+
+
+function plotResidual(Residual, nFrame, rgbOutputPath)
+    R = Residual;
+    G = Residual;
+    B = Residual;
+    for i=1:nFrame
+        im(:,:,1)=R(:,:,i)';
+        im(:,:,2)=G(:,:,i)';
+        im(:,:,3)=B(:,:,i)';
+        imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
+    end
+end

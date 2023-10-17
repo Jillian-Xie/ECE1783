@@ -16,7 +16,7 @@ blockSize = 2;
 n = 1;
 QP = 0;
 
-[MVCell, approximatedResidualCell, reconstructedFrame] = motionEstimate(refFrame,currentFrame,blockSize,r,n,QP);
+[MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = motionEstimate(refFrame,currentFrame,blockSize,r,n,QP);
 
 
 
