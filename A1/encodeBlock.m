@@ -1,4 +1,4 @@
-function [bestMAE, bestMV, approximatedResidualBlock, reconstructedBlock] = encodeBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize,n)
+function [bestMAE, bestMV, approximatedResidualBlock, reconstructedBlock] = encodeBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize,n,QP)
 bestMAE = Inf;
 bestMV = int32([0, 0]);
 currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
@@ -38,5 +38,8 @@ for mvX = -r:r
         end
     end
 end
-approximatedResidualBlock = round(residualBlock / (2^n)) * (2^n);
+transformedBlock = dct2(residualBlock);
+quantizedBlock = quantize(transformedBlock, QP);
+rescaledBlock = rescaling(quantizedBlock, QP);
+approximatedResidualBlock = idct2(rescaledBlock);
 reconstructedBlock = int32(approximatedResidualBlock) + int32(referenceBlock);

@@ -7,6 +7,7 @@ height = uint32(288);
 blockSize = 8;
 r = 2;
 n = 1;
+QP = 0;
 
 MVOutputPath = 'MVOutput\';
 if ~exist(MVOutputPath,'dir')
@@ -42,7 +43,7 @@ referenceFrame = firstRefFrame;
 for currentFrameNum = 1:nFrame
     absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:width,1:height,currentFrameNum) - referenceFrame(1:width,1:height)));
 
-    [MVCell, approximatedResidualCell, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n);
+    [MVCell, approximatedResidualCell, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n,QP);
     referenceFrame = reconstructedY;
     
     MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
