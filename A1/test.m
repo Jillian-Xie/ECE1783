@@ -1,4 +1,5 @@
 % test for getBestMV motionEstimate
+clc; clear; close all;
 
 refFrame=[9 10 1 2
           13 14 5 6
@@ -16,7 +17,8 @@ blockSize = 2;
 n = 1;
 QP = 0;
 
-[MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = motionEstimate(refFrame,currentFrame,blockSize,r,n,QP);
+% [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = motionEstimate(refFrame,currentFrame,blockSize,r,n,QP);
 
 
 
+[modeCell,I_blockCell, reconstructedY] = intraPrediction(currentFrame, blockSize);
