@@ -64,7 +64,7 @@ for currentFrameNum = 1:nFrame
         save(I_blockFilePath, 'I_blockCell');
 
     else
-        [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n, QP);
+        [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex4_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n, QP);
         referenceFrame = reconstructedY;
 
         MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];

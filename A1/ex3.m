@@ -7,7 +7,6 @@ height = uint32(288);
 blockSize = 8;
 r = 2;
 n = 1;
-QP = 0;
 
 MVOutputPath = 'MVOutput\';
 if ~exist(MVOutputPath,'dir')
@@ -44,7 +43,7 @@ referenceFrame = firstRefFrame;
 for currentFrameNum = 1:nFrame
     absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:width,1:height,currentFrameNum) - referenceFrame(1:width,1:height)));
 
-    [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n, QP);
+    [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex3_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n);
     referenceFrame = reconstructedY;
     
     absoluteResidualWithMC(:,:,currentFrameNum) = approximatedResidualFrame;

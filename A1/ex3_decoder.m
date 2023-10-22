@@ -1,4 +1,4 @@
-function decoder(nFrame, width, height, blockSize, QP)
+function decoder(nFrame, width, height, blockSize)
     MVOutputPath = 'MVOutput\';
     ResidualOutputPath = 'approximatedResidualOutput\';
     assert(exist(MVOutputPath,'dir') > 0);
@@ -36,8 +36,6 @@ function decoder(nFrame, width, height, blockSize, QP)
                 verticalOffset = cell1{1,1}(2);
                 
                 cell2 = approximatedResidualCell(i,j);
-                cell2 = rescaling(cell2, QP);
-                cell2 = idct2(cell2);
                 
                 for ii = 1:blockSize
                     for jj = 1:blockSize
