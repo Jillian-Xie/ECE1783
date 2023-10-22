@@ -53,7 +53,8 @@ absoluteResidualWithMC = zeros(width, height, nFrame);
 referenceFrame = firstRefFrame;
 
 for currentFrameNum = 1:nFrame
-    if rem(currentFrameNum,I_Period) == 0
+    if rem(currentFrameNum,I_Period) == 1
+        % first frame needs to be I frame
         [modeCell,I_blockCell, reconstructedY] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize);
         referenceFrame = reconstructedY;
 
