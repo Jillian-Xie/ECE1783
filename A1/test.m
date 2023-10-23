@@ -16,13 +16,12 @@ r = 2;
 blockSize = 2;
 n = 1;
 QP = 0;
-% 
+
 % % [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = motionEstimate(refFrame,currentFrame,blockSize,r,n,QP);
 % 
 % 
 % 
-[modeCell,I_blockCell, reconstructedFrame] = intraPrediction(currentFrame, blockSize)
-
+[modes, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize, QP)
 
 % block = [-31 9 8 4
 %          -4 1 4 0
@@ -32,3 +31,9 @@ QP = 0;
 % 
 % array = [-31     9    -4     8     1    -3     4     4     2     4     0     4     0     0    -4     0];
 % disp(reverseScannedBlock(array, 4));
+
+a=linspace(1,64,64);
+n=64;
+b=randi([0, 1], [1, n]);
+a=reshape(a,[8,8]);
+b=reshape(b,[8,8]);

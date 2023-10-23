@@ -1,4 +1,4 @@
-function [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = ex4_motionEstimate(referenceFrame,currentFrame,blockSize,r,n,QP)
+function [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = ex4_motionEstimate(referenceFrame,currentFrame,blockSize,r, QP)
 
 height = size(referenceFrame,1);
 width  = size(referenceFrame,2);
@@ -13,7 +13,7 @@ reconstructedFrame = uint8(zeros(height, width));
 
 for heightBlockIndex = 1:heightBlockNum
     for widthBlockIndex = 1:widthBlockNum
-        [bestMAE, bestMV, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = ex4_encodeBlock(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize,n,QP);
+        [bestMAE, bestMV, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = ex4_encodeBlock(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize, QP);
         
 %         encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, blockSize);
         MVCell{heightBlockIndex, widthBlockIndex} = bestMV;

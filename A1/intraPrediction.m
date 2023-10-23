@@ -1,4 +1,4 @@
-function [modeCell,I_blockCell, reconstructedFrame] = intraPrediction(currentFrame, blockSize)
+function [modes, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP)
 
 height = size(currentFrame,1);
 width  = size(currentFrame,2);
@@ -6,18 +6,24 @@ width  = size(currentFrame,2);
 widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
 heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
-modeCell = cell(heightBlockNum, widthBlockNum);
-I_blockCell = cell(heightBlockNum, widthBlockNum);
+modes = zeros(heightBlockNum, widthBlockNum);
 reconstructedFrame(1:height,1:width) = uint8(128);
+approximatedResidualCell = cell(heightBlockNum, widthBlockNum);
+approximatedResidualFrame = uint8(zeros(height, width));
 
 for heightBlockIndex = 1:heightBlockNum
     for widthBlockIndex = 1:widthBlockNum
         currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
+        
         [verticalReffernce, horizontalRefference] = getRefference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
-        [mode, predictedBlock] = intraPredictBlock(verticalReffernce, horizontalRefference, currentBlock, blockSize);
-        modeCell{heightBlockIndex, widthBlockIndex} = mode;
-        I_blockCell{heightBlockIndex, widthBlockIndex} = predictedBlock;
-        reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = predictedBlock;
+        [mode, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalReffernce, horizontalRefference, currentBlock, blockSize,QP);
+        
+        modes(heightBlockIndex, widthBlockIndex) = mode;
+        
+        approximatedResidualCell{heightBlockIndex, widthBlockIndex} = approximatedResidualBlock;
+        approximatedResidualFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = approximatedResidualBlock;
+        
+        reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
     end
 end
 

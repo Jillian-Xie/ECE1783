@@ -1,6 +1,7 @@
-function [mode, predictedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize)
+function [mode, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize,QP)
 verticalPredictionBlock=zeros(blockSize, blockSize);
 horizontalPredictionBlock=zeros(blockSize, blockSize);
+predictedBlock = zeros(blockSize, blockSize);
             
 for i=1:blockSize
     verticalPredictionBlock(i, :)=verticalRefference;
@@ -20,3 +21,10 @@ else
     mode=1;
     predictedBlock=verticalPredictionBlock;
 end
+
+residualBlock = int32(currentBlock) - int32(predictedBlock);
+transformedBlock = dct2(residualBlock);
+quantizedBlock = quantize(transformedBlock, QP);
+rescaledBlock = rescaling(quantizedBlock, QP);
+approximatedResidualBlock = idct2(rescaledBlock);
+reconstructedBlock = int32(approximatedResidualBlock) + int32(predictedBlock);

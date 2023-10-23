@@ -6,7 +6,6 @@ width  = uint32(352);
 height = uint32(288);
 blockSize = 8;
 r = 2;
-n = 1;
 QP = 0;
 I_Period = 1;
 
@@ -40,10 +39,6 @@ if ~exist(modeOutputPath,'dir')
     mkdir(modeOutputPath)
 end
 
-I_blockOutputPath = 'I_block\';
-if ~exist(I_blockOutputPath,'dir')
-    mkdir(I_blockOutputPath)
-end
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
@@ -55,22 +50,18 @@ referenceFrame = firstRefFrame;
 for currentFrameNum = 1:nFrame
     if rem(currentFrameNum,I_Period) == 1
         % first frame needs to be I frame
-        [modeCell,I_blockCell, reconstructedY] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize);
+        [modeCell, approximatedResidualCell, approximatedResidualFrame,reconstructedY] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP);
         referenceFrame = reconstructedY;
 
         modeFilePath = [modeOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
         save(modeFilePath, 'modeCell');
-        I_blockFilePath = [I_blockOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-        save(I_blockFilePath, 'I_blockCell');
-
     else
-        [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex4_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n, QP);
+        [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex4_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, QP);
         referenceFrame = reconstructedY;
 
         MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
         save(MVFilePath, 'MVCell');
-        approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-        save(approximatedResidualFilePath, 'approximatedResidualCell');
-
     end
+    approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+    save(approximatedResidualFilePath, 'approximatedResidualCell');
 end
