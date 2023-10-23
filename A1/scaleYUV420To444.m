@@ -1,11 +1,11 @@
 function [Yscale,Uscale,Vscale] = scaleYUV420To444(Y, U, V, width, height ,nFrame)
     Yscale = uint8(Y);
-    Uscale = uint8(zeros(width, height, nFrame));
-    Vscale = uint8(zeros(width, height, nFrame));
+    Uscale = uint8(zeros(height, width, nFrame));
+    Vscale = uint8(zeros(height, width, nFrame));
 
     for iFrame = 1:nFrame
-        for i = 1:width/2
-            for j = 1:height/2
+        for i = 1:height/2
+            for j = 1:width/2
                 Uval = U(i,j,iFrame);
                 Vval = V(i,j,iFrame);
                 ii = 1+(i-1)*2;

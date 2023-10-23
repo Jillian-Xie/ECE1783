@@ -4,11 +4,11 @@ verticalPredictionBlock=currentBlock;
 horizontalPredictionBlock=currentBlock;
             
 for i=2:blockSize
-    verticalPredictionBlock(2:blockSize,i)=currentBlock(1,i);
+    verticalPredictionBlock(i, 2:blockSize)=currentBlock(i, 1);
 end
 
 for i=2:blockSize
-    horizontalPredictionBlock(i,2:blockSize)=currentBlock(i,1);
+    horizontalPredictionBlock(2:blockSize, i)=currentBlock(1, i);
 end
 
 MAE_h=abs(sum(int32(horizontalPredictionBlock),'all') - sum(int32(currentBlock),'all'))  / numel(int32(currentBlock));

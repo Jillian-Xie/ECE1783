@@ -1,6 +1,6 @@
 function flag = checkFrameBoundary(widthStart, heightStart, blockSize, frame)
-width = uint32(size(frame, 1));
-height = uint32(size(frame, 2));
+height = uint32(size(frame, 1));
+width = uint32(size(frame, 2));
 widthEnd = int32(widthStart + blockSize - 1);
 heightEnd = int32(heightStart + blockSize - 1);
 if widthStart >= 1 && widthEnd <= width && heightStart >= 1 && heightEnd <= height

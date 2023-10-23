@@ -1,23 +1,23 @@
-function [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = motionEstimate(referenceFrame,currentFrame,blockSize,r,n)
+function [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = ex3_motionEstimate(referenceFrame,currentFrame,blockSize,r,n)
 
-width  = size(referenceFrame,1);
-height = size(referenceFrame,2);
+height = size(referenceFrame,1);
+width  = size(referenceFrame,2);
 
 widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
 heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
-MVCell = cell(widthBlockNum, heightBlockNum);
-approximatedResidualCell = cell(widthBlockNum, heightBlockNum);
-approximatedResidualFrame = uint8(zeros(width, height));
-reconstructedFrame = uint8(zeros(width, height));
+MVCell = cell(heightBlockNum, widthBlockNum);
+approximatedResidualCell = cell(heightBlockNum, widthBlockNum);
+approximatedResidualFrame = uint8(zeros(height, width));
+reconstructedFrame = uint8(zeros(height, width));
 
-for widthBlockIndex = 1:widthBlockNum
-    for heightBlockIndex = 1:heightBlockNum
+for heightBlockIndex = 1:heightBlockNum
+    for widthBlockIndex = 1:widthBlockNum
         [bestMAE, bestMV, approximatedResidualBlock, reconstructedBlock] = ex3_encodeBlock(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize,n);
-        MVCell{widthBlockIndex, heightBlockIndex} = bestMV;
-        approximatedResidualCell{widthBlockIndex, heightBlockIndex} = approximatedResidualBlock;
-        approximatedResidualFrame((widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize, (heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize) = approximatedResidualBlock;
-        reconstructedFrame((widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize, (heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize) = reconstructedBlock;
+        MVCell{heightBlockIndex, widthBlockIndex} = bestMV;
+        approximatedResidualCell{heightBlockIndex, widthBlockIndex} = approximatedResidualBlock;
+        approximatedResidualFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = approximatedResidualBlock;
+        reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
     end
 end
 

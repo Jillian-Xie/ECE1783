@@ -15,9 +15,9 @@ if ~exist(rgbOutputPath,'dir')
 end
 
 for i=1:nFrame
-    im(:,:,1)=R(:,:,i)';
-    im(:,:,2)=G(:,:,i)';
-    im(:,:,3)=B(:,:,i)';
+    im(:,:,1)=R(:,:,i);
+    im(:,:,2)=G(:,:,i);
+    im(:,:,3)=B(:,:,i);
     Image=uint8(im);
     imwrite(uint8(im),[rgbOutputPath, int2str(i), '.png']);
 end

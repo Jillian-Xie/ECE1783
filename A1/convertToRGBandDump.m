@@ -4,9 +4,9 @@ function convertToRGBandDump(Y, U, V, width, height ,nFrame, rgbOutputPath)
     [R,G,B] = YUV2RGB(Yscale, Uscale, Vscale, width, height ,nFrame);
 
     for i=1:nFrame
-        im(:,:,1)=R(:,:,i)';
-        im(:,:,2)=G(:,:,i)';
-        im(:,:,3)=B(:,:,i)';
+        im(:,:,1)=R(:,:,i);
+        im(:,:,2)=G(:,:,i);
+        im(:,:,3)=B(:,:,i);
         imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
     end
 end

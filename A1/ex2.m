@@ -12,7 +12,7 @@ blockSize = 2;
 rgbOutputPath = ['D:\ECE1783\A1\rgbAfterAvgBlockSize', int2str(blockSize), '\'];
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
-YAvg = uint8(zeros(width, height, nFrame));
+YAvg = uint8(zeros(height, width, nFrame));
 PSNR = zeros(nFrame, 1);
 
 if ~exist(YOnlyOutputPath,'dir')
@@ -54,21 +54,21 @@ function YAvg = replaceBlocksWithAvg(Y, blockSize, width, height)
     horizontal = idivide(width, blockSize, 'ceil');
     vertical = idivide(height, blockSize, 'ceil');
     
-    YAvg = uint8(zeros(width, height));
+    YAvg = uint8(zeros(height, width));
     
-    for i = 1:horizontal
-        for j = 1:vertical
+    for i = 1:vertical
+        for j = 1:horizontal
             sum = uint32(0);
             % go through the block to find sum
             for ii = 1:blockSize
                 for jj = 1:blockSize
-                    horizontalIndex = (i - 1) * blockSize + ii;
-                    verticalIndex = (j - 1) * blockSize + jj;
+                    horizontalIndex = (j - 1) * blockSize + jj;
+                    verticalIndex = (i - 1) * blockSize + ii;
                     
                     if horizontalIndex > width || verticalIndex > height
                         incre = uint32(128); % padded region is grey
                     else
-                        incre = uint32(Y(horizontalIndex, verticalIndex));
+                        incre = uint32(Y(verticalIndex, horizontalIndex));
                     end
                     
                     sum = sum + incre;
@@ -80,13 +80,13 @@ function YAvg = replaceBlocksWithAvg(Y, blockSize, width, height)
             % assign the sum to each block
             for ii = 1:blockSize
                 for jj = 1:blockSize
-                    horizontalIndex = (i - 1) * blockSize + ii;
-                    verticalIndex = (j - 1) * blockSize + jj;
+                    horizontalIndex = (j - 1) * blockSize + jj;
+                    verticalIndex = (i - 1) * blockSize + ii;
                     
                     if horizontalIndex > width || verticalIndex > height
                         continue;
                     else
-                        YAvg(horizontalIndex, verticalIndex) = avg;
+                        YAvg(verticalIndex,horizontalIndex) = avg;
                     end
                 end
             end
