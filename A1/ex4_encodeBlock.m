@@ -1,4 +1,4 @@
-function [bestMAE, bestMV, approximatedResidualBlock, reconstructedBlock] = ex4_encodeBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize,n,QP)
+function [bestMAE, bestMV, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = ex4_encodeBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize,n,QP)
 bestMAE = Inf;
 bestMV = int32([0, 0]);
 currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
