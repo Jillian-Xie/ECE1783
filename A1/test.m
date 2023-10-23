@@ -32,8 +32,7 @@ QP = 0;
 % array = [-31     9    -4     8     1    -3     4     4     2     4     0     4     0     0    -4     0];
 % disp(reverseScannedBlock(array, 4));
 
-a=linspace(1,64,64);
-n=64;
-b=randi([0, 1], [1, n]);
-a=reshape(a,[8,8]);
-b=reshape(b,[8,8]);
+MVCell = {[1,2], [-1,2]};
+modes = [0, 1];
+
+[diffMV, diffModes] = differentialEncoding(MVCell, modes)
