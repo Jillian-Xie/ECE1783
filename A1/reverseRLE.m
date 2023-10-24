@@ -8,11 +8,13 @@ function decodedRLE = reverseRLE(array, blockSize)
     
     while index <= length
         if array(1, index) < 0
+            % encountered a run of non zero values
             for i = 1:-array(1, index)
                 index = index + 1;
                 decodedRLE = [decodedRLE, array(1, index)];
             end
         elseif array(1, index) > 0
+            % encountered a run of zeros
             for i = 1:array(1, index)
                 decodedRLE = [decodedRLE, 0];
             end
