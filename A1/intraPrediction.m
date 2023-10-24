@@ -1,4 +1,4 @@
-function [modes, QTCCoeffsFrame, MDiffsFrame, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP)
+function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP)
 
 height = size(currentFrame,1);
 width  = size(currentFrame,2);
@@ -15,8 +15,9 @@ QTCCoeffsFrame = strings([1, widthBlockNum * heightBlockNum]);
 MDiffsInt = [];
 
 for heightBlockIndex = 1:heightBlockNum
+    previousMode = int32(0); % assume horizontal in the beginning
     for widthBlockIndex = 1:widthBlockNum
-        previousMode = int32(0); % assume horizontal in the beginning
+      
         currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
         
         [verticalReffernce, horizontalRefference] = getRefference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
