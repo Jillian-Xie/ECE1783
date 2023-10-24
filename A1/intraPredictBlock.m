@@ -18,7 +18,7 @@ if(SAD_h>SAD_v)
     mode=int32(0);
     predictedBlock=horizontalPredictionBlock;
 else
-    mode=int32(0);
+    mode=int32(1);
     predictedBlock=verticalPredictionBlock;
 end
 
