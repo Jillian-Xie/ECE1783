@@ -38,6 +38,7 @@ for mvX = -r:r
         end
     end
 end
+bestMV = int32(bestMV);
 transformedBlock = dct2(residualBlock);
 quantizedBlock = quantize(transformedBlock, QP);
 rescaledBlock = rescaling(quantizedBlock, QP);

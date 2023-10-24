@@ -1,4 +1,4 @@
-function [mode, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize,QP)
+function [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize,QP)
 verticalPredictionBlock=zeros(blockSize, blockSize);
 horizontalPredictionBlock=zeros(blockSize, blockSize);
 predictedBlock = zeros(blockSize, blockSize);
@@ -15,10 +15,10 @@ SAD_h=abs(sum(int32(horizontalPredictionBlock),'all') - sum(int32(currentBlock),
 SAD_v=abs(sum(int32(verticalPredictionBlock),'all') - sum(int32(currentBlock),'all'));
 
 if(SAD_h>SAD_v)
-    mode=0;
+    mode=int32(0);
     predictedBlock=horizontalPredictionBlock;
 else
-    mode=1;
+    mode=int32(0);
     predictedBlock=verticalPredictionBlock;
 end
 

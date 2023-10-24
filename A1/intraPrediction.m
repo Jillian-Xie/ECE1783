@@ -1,4 +1,4 @@
-function [modes, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP)
+function [modes, QTCCoeffsFrame, MDiffsFrame, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP)
 
 height = size(currentFrame,1);
 width  = size(currentFrame,2);
@@ -11,12 +11,23 @@ reconstructedFrame(1:height,1:width) = uint8(128);
 approximatedResidualCell = cell(heightBlockNum, widthBlockNum);
 approximatedResidualFrame = uint8(zeros(height, width));
 
+QTCCoeffsFrame = strings([1, widthBlockNum * heightBlockNum]);
+MDiffsInt = [];
+
 for heightBlockIndex = 1:heightBlockNum
     for widthBlockIndex = 1:widthBlockNum
+        previousMode = int32(0); % assume horizontal in the beginning
         currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
         
         [verticalReffernce, horizontalRefference] = getRefference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
-        [mode, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalReffernce, horizontalRefference, currentBlock, blockSize,QP);
+        [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalReffernce, horizontalRefference, currentBlock, blockSize,QP);
+        
+        encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, blockSize);
+        QTCCoeffsFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) = encodedQuantizedBlock;
+        
+        % differential encoding
+        MDiffsInt = [MDiffsInt, xor(mode, previousMode)]; % 0 = no change, 1 = changed
+        previousMode = mode;
         
         modes(heightBlockIndex, widthBlockIndex) = mode;
         
@@ -26,6 +37,9 @@ for heightBlockIndex = 1:heightBlockNum
         reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
     end
 end
+
+MDiffRLE = RLE(MDiffsInt);
+MDiffsFrame = expGolombEncoding(MDiffRLE);
 
 end
 

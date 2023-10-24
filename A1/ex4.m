@@ -1,14 +1,15 @@
 clc; clear; close all;
 
+tic;
+
 yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = uint32(300);
+nFrame = uint32(10);
 width  = uint32(352);
 height = uint32(288);
 blockSize = 8;
 r = 2;
 QP = 0;
-I_Period = 1;
-
+I_Period = 2;
 MVOutputPath = 'MVOutput\';
 if ~exist(MVOutputPath,'dir')
     mkdir(MVOutputPath)
@@ -47,16 +48,25 @@ absoluteResidualNoMC = zeros(height, width, nFrame);
 absoluteResidualWithMC = zeros(height, width, nFrame);
 referenceFrame = firstRefFrame;
 
+widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
+heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
+QTCCoeffs = strings([nFrame, widthBlockNum * heightBlockNum]);
+MDiffs = strings([nFrame, 1]);
+
 for currentFrameNum = 1:nFrame
     if rem(currentFrameNum,I_Period) == 1
         % first frame needs to be I frame
-        [modeCell, approximatedResidualCell, approximatedResidualFrame,reconstructedY] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP);
+        [modeCell, QTCCoeffsFrame, MDiffsFrame, approximatedResidualCell, approximatedResidualFrame,reconstructedY] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP);
+        QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
+        MDiffs(currentFrameNum, 1) = MDiffsFrame;
         referenceFrame = reconstructedY;
 
         modeFilePath = [modeOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
         save(modeFilePath, 'modeCell');
     else
-        [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex4_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, QP);
+        [MVCell, QTCCoeffsFrame, MDiffsFrame, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex4_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, QP);
+        QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
+        MDiffs(currentFrameNum, 1) = MDiffsFrame;
         referenceFrame = reconstructedY;
 
         MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
@@ -65,3 +75,5 @@ for currentFrameNum = 1:nFrame
     approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
     save(approximatedResidualFilePath, 'approximatedResidualCell');
 end
+
+toc;

@@ -12,6 +12,6 @@ function expGolombEncoded = expGolombEncoding(array)
             dec = 2 * array(1, i);
         end
         % dec2bin converts decimal numbers to string of binary numbers
-        expGolombEncoded = strcat(expGolombEncoded, dec2bin(dec, 2*floor(log2(dec)) + 1));
+        expGolombEncoded = strcat(expGolombEncoded, dec2bin(dec, 2*floor(log2(double(dec))) + 1));
     end
 end
