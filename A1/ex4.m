@@ -3,7 +3,7 @@ clc; clear; close all;
 tic;
 
 yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = uint32(10);
+nFrame = uint32(20);
 width  = uint32(352);
 height = uint32(288);
 blockSize = 8;
@@ -49,4 +49,8 @@ end
 save('QTCCoeffs.mat', 'QTCCoeffs');
 save('MDiffs.mat', 'MDiffs');
 
+toc;
+
+tic;
+ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs);
 toc;
