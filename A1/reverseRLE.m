@@ -1,4 +1,4 @@
-function decodedRLE = reverseRLE(array, blockSize)
+function decodedRLE = reverseRLE(array, resultSize)
     % array is assumed to be a 1xlength array
     % return an encoded 1-d array of shape 1x(blockSize * blockSize)
     
@@ -23,7 +23,7 @@ function decodedRLE = reverseRLE(array, blockSize)
         index = index + 1;
     end
     
-    while size(decodedRLE, 2) < blockSize * blockSize
+    while size(decodedRLE, 2) < resultSize
         decodedRLE = [decodedRLE, 0];
     end
 end

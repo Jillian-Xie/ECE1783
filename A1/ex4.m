@@ -11,6 +11,10 @@ r = 2;
 QP = 0;
 I_Period = 2;
 
+encoderReconstructionOutputPath = 'encoderReconstructionOutput\';
+if ~exist(encoderReconstructionOutputPath,'dir')
+    mkdir(encoderReconstructionOutputPath)
+end
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
@@ -35,6 +39,11 @@ for currentFrameNum = 1:nFrame
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         referenceFrame = reconstructedY;
     end
+    
+    YOnlyFilePath = [encoderReconstructionOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
+    fid = createOrClearFile(YOnlyFilePath);
+    fwrite(fid,uint8(reconstructedY(:,:)),'uchar');
+    fclose(fid);
 end
 
 save('QTCCoeffs.mat', 'QTCCoeffs');
