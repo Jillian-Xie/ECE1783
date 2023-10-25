@@ -1,10 +1,6 @@
 function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs)
-    MVOutputPath = 'MVOutput\';
-    ResidualOutputPath = 'approximatedResidualOutput\';
-    assert(exist(MVOutputPath,'dir') > 0);
-    assert(exist(ResidualOutputPath,'dir') > 0);
-    
     DecoderOutputPath = 'DecoderOutput\';
+    reconstructedY = zeros(width, height, nFrame);
     
     if ~exist(DecoderOutputPath,'dir')
         mkdir(DecoderOutputPath)
@@ -72,12 +68,15 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
             end
         end
         refFrame = reconstructedFrame;
-        
-        YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
-        fid = createOrClearFile(YOnlyFilePath);
-        fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
-        fclose(fid);
+        reconstructedY(:,:,currentFrameNum) = reconstructedFrame';
     end
+
+    YOnlyFilePath = [DecoderOutputPath, 'DecoderOutput', '.yuv'];
+    fid = createOrClearFile(YOnlyFilePath);
+    for i=1:nFrame
+    fwrite(fid,uint8(reconstructedY(:,:,i)),'uchar');
+    end
+    fclose(fid);
 end
 
 function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP)
