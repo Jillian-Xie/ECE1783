@@ -27,12 +27,7 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
             for heightBlockIndex = 1:heightBlockNum
                 previousMode = int32(0); % assume horizontal in the beginning
                 for widthBlockIndex = 1:widthBlockNum
-                    encodedQuantizedBlock = QTCCoeff(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex);
-                    encodedRLE = expGolombDecoding(convertStringsToChars(encodedQuantizedBlock));
-                    scanned = reverseRLE(encodedRLE, blockSize * blockSize);
-                    quantizedBlock = reverseScannedBlock(scanned, blockSize);
-                    rescaledBlock = rescaling(quantizedBlock, QP);
-                    approximatedResidualBlock = idct2(rescaledBlock);
+                    approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP);
                     
                     notSameMode = MDiffRLEDecoded(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex); % 0 = no change, 1 = changed
                     mode = xor(previousMode, notSameMode);
@@ -47,7 +42,11 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
                         % vertical
                         thisBlock = int32(approximatedResidualBlock) + int32(verticalRefernce);
                     end
-                    reconstructedFrame((heightBlockIndex-1)*blockSize + 1 : heightBlockIndex * blockSize, (widthBlockIndex-1) * blockSize + 1 : widthBlockIndex * blockSize) = thisBlock;
+                    top = int32((heightBlockIndex-1)*blockSize + 1);
+                    bottom = int32(heightBlockIndex * blockSize);
+                    left = int32((widthBlockIndex-1) * blockSize + 1);
+                    right = int32(widthBlockIndex * blockSize);
+                    reconstructedFrame(top : bottom, left : right) = thisBlock;
                 end
             end
         else
@@ -56,12 +55,7 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
             for heightBlockIndex = 1:heightBlockNum
                 previousMV = int32([0, 0]); % assume horizontal in the beginning
                 for widthBlockIndex = 1:widthBlockNum
-                    encodedQuantizedBlock = QTCCoeff(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex);
-                    encodedRLE = expGolombDecoding(convertStringsToChars(encodedQuantizedBlock));
-                    scanned = reverseRLE(encodedRLE, blockSize * blockSize);
-                    quantizedBlock = reverseScannedBlock(scanned, blockSize);
-                    rescaledBlock = rescaling(quantizedBlock, QP);
-                    approximatedResidualBlock = idct2(rescaledBlock);
+                    approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP);
                     
                     blockNum = (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex;
                     MVDiff = MDiffRLEDecoded(1, blockNum * 2 - 1 : blockNum * 2);
@@ -84,4 +78,13 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
         fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
         fclose(fid);
     end
+end
+
+function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP)
+    encodedQuantizedBlock = QTCCoeff(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex);
+    encodedRLE = expGolombDecoding(convertStringsToChars(encodedQuantizedBlock));
+    scanned = reverseRLE(encodedRLE, blockSize * blockSize);
+    quantizedBlock = reverseScannedBlock(scanned, blockSize);
+    rescaledBlock = rescaling(quantizedBlock, QP);
+    approximatedResidualBlock = idct2(rescaledBlock);
 end
