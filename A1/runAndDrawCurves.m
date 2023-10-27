@@ -39,27 +39,41 @@ for i = 1:(nargin-3)
     [YOriginal, U, V] = importYUV(varargin{i}.yuvInputFileName, varargin{i}.width, varargin{i}.height, varargin{i}.nFrame);
 
     for j=1:varargin{i}.nFrame
-        y(j, i) = psnr(YOutput(:, :, j), YOriginal(:,:,j));
-        if j == 1
-            x(j, i) = sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
-        else
-            x(j, i) = x(j - 1, i) + sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
+        if (y_axis == "PSNR")
+            y(j, i) = psnr(YOutput(:, :, j), YOriginal(:,:,j));
+        elseif (y_axis == "Bitcount")
+            if j == 1
+                y(j, i) = sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
+            else
+                y(j, i) = y(j - 1, i) + sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
+            end
         end
+
+        if (x_axis == "FrameIndex")
+            x(j, i) = j;
+        elseif (y_axis == "Bitcount")
+            if j == 1
+                x(j, i) = sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
+            else
+                x(j, i) = x(j - 1, i) + sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
+            end
+        end
+
     end
 
 end
 
 plot(x, y);
 title(fig_title);
-xlabel(x_axis); 
-ylabel(y_axis); 
+xlabel(x_axis);
+ylabel(y_axis);
 legend(legends,'Location','southwest');
 saveas(gcf, fullfile(plotOutputPath + x_axis + '_' + y_axis + '_' + int2str(varargin{1}.blockSize) + '_' + int2str(varargin{1}.r) + '_' + int2str(varargin{1}.QP) + '.jpeg'));
 delete(gcf);
 
 plot([x_encoder_time' x_decoder_time'], [y_encoder_time' y_decoder_time']);
 title("Execution Times");
-xlabel("IPP"); 
-ylabel("time(s)"); 
+xlabel("IPP");
+ylabel("time(s)");
 legend({'Encoder', 'Decoder'},'Location','southwest');
 saveas(gcf, fullfile(plotOutputPath + "Execution_Times_" + int2str(varargin{1}.blockSize) + '_' + int2str(varargin{1}.r) + '_' + int2str(varargin{1}.QP) + ".jpeg"));
