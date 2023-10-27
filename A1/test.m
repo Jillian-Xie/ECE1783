@@ -29,19 +29,30 @@ clc; clear; close all;
 %          4 0 -4 0];
 % disp(scanBlock(block, 4));
 % 
-array = [-31     9    -4     8     1    -3     4     4     2     4     0     4     0     0    -4     0];
-disp(RLE(array));
-
-reverseArray = [-10   -31     9    -4     8     1    -3     4     4     2     4     1    -1     4     2    -1    -4     0];
-disp(reverseRLE(reverseArray, 4));
-
-array = [1 0 0 0 0 0 0 0  0];
-disp(RLE(array));
-
-reverseArray = [-1 1 0];
-disp(reverseRLE(reverseArray, 3));
+% array = [-31     9    -4     8     1    -3     4     4     2     4     0     4     0     0    -4     0];
+% disp(RLE(array));
+% 
+% reverseArray = [-10   -31     9    -4     8     1    -3     4     4     2     4     1    -1     4     2    -1    -4     0];
+% disp(reverseRLE(reverseArray, 4));
+% 
+% array = [1 0 0 0 0 0 0 0  0];
+% disp(RLE(array));
+% 
+% reverseArray = [-1 1 0];
+% disp(reverseRLE(reverseArray, 3));
 
 % MVCell = {[1,2], [-1,2]};
 % modes = [0, 1];
 % 
 % [diffMV, diffModes] = differentialEncoding(MVCell, modes)
+
+y=[1 2 3 4
+   2 3 4 5
+   3 4 5 6
+   4 5 6 7];
+x=[1 1 1 1
+   2 2 2 2
+   3 3 3 3
+   4 4 4 4];
+
+plot(x,y)

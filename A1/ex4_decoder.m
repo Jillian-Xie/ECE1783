@@ -17,7 +17,7 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
         
         reconstructedFrame(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = uint8(128);
             
-        if rem(currentFrameNum,I_Period) == 1
+        if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
             % I frame
             MDiffRLEDecoded = reverseRLE(MDiffFrame, widthBlockNum * heightBlockNum);
             for heightBlockIndex = 1:heightBlockNum
@@ -68,9 +68,9 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
             end
         end
         refFrame = reconstructedFrame;
-        reconstructedY(:,:,currentFrameNum) = reconstructedFrame';
+        reconstructedY(:,:,currentFrameNum) = reconstructedFrame(1:height,1:width)';
     end
-
+    % get YOnly vedio
     YOnlyFilePath = [DecoderOutputPath, 'DecoderOutput', '.yuv'];
     fid = createOrClearFile(YOnlyFilePath);
     for i=1:nFrame

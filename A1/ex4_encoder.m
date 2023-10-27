@@ -22,7 +22,7 @@ QTCCoeffs = strings([nFrame, widthBlockNum * heightBlockNum]);
 MDiffs = strings([nFrame, 1]);
 
 for currentFrameNum = 1:nFrame
-    if rem(currentFrameNum,I_Period) == 1
+    if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
         % first frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP);
         QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
@@ -35,11 +35,10 @@ for currentFrameNum = 1:nFrame
         referenceFrame = reconstructedFrame;
     end
     reconstructedY(:,:,currentFrameNum) = reconstructedFrame';
-    im(:,:,1)=reconstructedFrame;
-    im(:,:,2)=reconstructedFrame;
-    im(:,:,3)=reconstructedFrame;
-    imwrite(uint8(im),[encoderReconstructionRGBOutputPath, sprintf('%04d',currentFrameNum), '.png']);
-
+    % im(:,:,1)=reconstructedFrame;
+    % im(:,:,2)=reconstructedFrame;
+    % im(:,:,3)=reconstructedFrame;
+    % imwrite(uint8(im),[encoderReconstructionRGBOutputPath, sprintf('%04d',currentFrameNum), '.png']);
 end
 
 save('QTCCoeffs.mat', 'QTCCoeffs');
