@@ -42,11 +42,7 @@ for i = 1:(nargin-3)
         if (y_axis == "PSNR")
             y(j, i) = psnr(YOutput(:, :, j), YOriginal(:,:,j));
         elseif (y_axis == "Bitcount")
-            if j == 1
-                y(j, i) = sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
-            else
-                y(j, i) = y(j - 1, i) + sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
-            end
+            y(j, i) = sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
         end
 
         if (x_axis == "FrameIndex")
@@ -66,7 +62,11 @@ end
 plot(x, y, '-o');
 title(fig_title);
 xlabel(x_axis);
-ylabel(y_axis);
+if y_axis == "Bitcount"
+ylabel(y_axis + "/Frame");
+else
+    ylabel(y_axis);
+end
 legend(legends,'Location','southwest');
 saveas(gcf, fullfile(plotOutputPath + x_axis + '_' + y_axis + '_' + int2str(varargin{1}.blockSize) + '_' + int2str(varargin{1}.r) + '_' + int2str(varargin{1}.QP) + '.jpeg'));
 delete(gcf);
