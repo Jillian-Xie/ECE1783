@@ -51,7 +51,7 @@ for i = 1:(nargin-3)
 
         if (x_axis == "FrameIndex")
             x(j, i) = j;
-        elseif (y_axis == "Bitcount")
+        elseif (x_axis == "Bitcount")
             if j == 1
                 x(j, i) = sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
             else
@@ -63,7 +63,7 @@ for i = 1:(nargin-3)
 
 end
 
-plot(x, y);
+plot(x, y, '-o');
 title(fig_title);
 xlabel(x_axis);
 ylabel(y_axis);
@@ -71,7 +71,7 @@ legend(legends,'Location','southwest');
 saveas(gcf, fullfile(plotOutputPath + x_axis + '_' + y_axis + '_' + int2str(varargin{1}.blockSize) + '_' + int2str(varargin{1}.r) + '_' + int2str(varargin{1}.QP) + '.jpeg'));
 delete(gcf);
 
-plot([x_encoder_time' x_decoder_time'], [y_encoder_time' y_decoder_time']);
+plot([x_encoder_time' x_decoder_time'], [y_encoder_time' y_decoder_time'], '-o');
 title("Execution Times");
 xlabel("IPP");
 ylabel("time(s)");
