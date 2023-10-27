@@ -72,7 +72,7 @@ saveas(gcf, fullfile(plotOutputPath + x_axis + '_' + y_axis + '_' + int2str(vara
 delete(gcf);
 
 plot([x_encoder_time' x_decoder_time'], [y_encoder_time' y_decoder_time'], '-o');
-title("Execution Times");
+title("Execution Times (i = " + int2str(varargin{1}.blockSize) + " qp = " + int2str(varargin{1}.QP) + ")");
 xlabel("IPP");
 ylabel("time(s)");
 legend({'Encoder', 'Decoder'},'Location','southwest');
