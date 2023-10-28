@@ -1,7 +1,5 @@
 function [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedFrame, avgMAE] = ex3_motionEstimate(referenceFrame,currentFrame,blockSize,r,n)
 
-% disp(referenceFrame(130:150, 170:190))
-
 height = size(referenceFrame,1);
 width  = size(referenceFrame,2);
 
