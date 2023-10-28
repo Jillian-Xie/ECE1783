@@ -1,22 +1,22 @@
 clc; clear; close all; 
 
-yuvInputFileName = 'akiyo_qcif.yuv';
-width  = uint32(176);
-height = uint32(144);
-nFrame = uint32(10);
-x_frame = [1:nFrame];
-
-yuvInputFileNameSeparator = split(yuvInputFileName, '.');
-plotOutputPath = strcat('ex3_', yuvInputFileNameSeparator{1,1}, '_Plots', filesep);
-
-if ~exist(plotOutputPath,'dir')
-    mkdir(plotOutputPath)
-end
-
-varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+% yuvInputFileName = 'akiyo_qcif.yuv';
+% width  = uint32(176);
+% height = uint32(144);
+% nFrame = uint32(10);
+% x_frame = [1:nFrame];
+% 
+% yuvInputFileNameSeparator = split(yuvInputFileName, '.');
+% plotOutputPath = strcat('ex3_', yuvInputFileNameSeparator{1,1}, '_Plots', filesep);
+% 
+% if ~exist(plotOutputPath,'dir')
+%     mkdir(plotOutputPath)
+% end
+% 
+% varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
 yuvInputFileName = 'foreman420_cif.yuv';
 width  = uint32(352);
@@ -31,10 +31,10 @@ if ~exist(plotOutputPath,'dir')
     mkdir(plotOutputPath)
 end
 
-varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+% varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
 generateOutputFile(yuvInputFileName, nFrame, width, height, 8, 4, 3);
 
@@ -169,6 +169,7 @@ function generateOutputFile(yuvInputFileName, nFrame, width, height, blockSize, 
 
     MV_X(1:heightBlockNum,1:widthBlockNum,1:nFrame) = int32(0);
     MV_Y(1:heightBlockNum,1:widthBlockNum,1:nFrame) = int32(0);
+    MVs(heightBlockNum * widthBlockNum * nFrame, 2) = int32(0);
 
     for i=1:nFrame
         reconstructedY(:,:,i) = reconstructedFrame(1:height,1:width,i)';
@@ -184,16 +185,17 @@ function generateOutputFile(yuvInputFileName, nFrame, width, height, blockSize, 
     for i=1:nFrame
         MVFilePath = [MVInputPath, sprintf('%04d',i), '.mat'];
         load(MVFilePath, "MVCell");
-        for widthBlockIndex = 1:widthBlockNum
-            for heightBlockIndex = 1:heightBlockNum
-                MV_X(heightBlockIndex,widthBlockIndex,i) = MVCell{heightBlockIndex,widthBlockIndex}(1);
-                MV_Y(heightBlockIndex,widthBlockIndex,i) = MVCell{heightBlockIndex,widthBlockIndex}(2);
+        for heightBlockIndex = 1:heightBlockNum
+            for widthBlockIndex = 1:widthBlockNum
+                MVIndex = heightBlockNum * widthBlockNum * (i-1) + (heightBlockIndex-1) * widthBlockNum + widthBlockIndex;
+                MVs(MVIndex, 1) = MVCell{heightBlockIndex,widthBlockIndex}(1);
+                MVs(MVIndex, 2) = MVCell{heightBlockIndex,widthBlockIndex}(2);
             end
         end
     end
     MVOutputFileName = strcat(MVInputPath, filesep, "MVTextFile.txt");
-    MVResult = [MV_X;MV_Y];
-    writematrix(MVResult, MVOutputFileName);
+
+    writematrix(MVs, MVOutputFileName);
 end
 
 function plotAgainstFrame(x_frame, yVals, legends, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath)
