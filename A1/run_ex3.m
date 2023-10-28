@@ -1,5 +1,23 @@
 clc; clear; close all; 
 
+yuvInputFileName = 'akiyo_qcif.yuv';
+width  = uint32(176);
+height = uint32(144);
+nFrame = uint32(10);
+x_frame = [1:nFrame];
+
+yuvInputFileNameSeparator = split(yuvInputFileName, '.');
+plotOutputPath = strcat('ex3_', yuvInputFileNameSeparator{1,1}, '_Plots', filesep);
+
+if ~exist(plotOutputPath,'dir')
+    mkdir(plotOutputPath)
+end
+
+varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+
 yuvInputFileName = 'foreman420_cif.yuv';
 width  = uint32(352);
 height = uint32(288);
@@ -14,9 +32,9 @@ if ~exist(plotOutputPath,'dir')
 end
 
 varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
 varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
 generateOutputFile(yuvInputFileName, nFrame, width, height, 8, 4, 3);
 
