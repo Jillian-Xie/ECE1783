@@ -1,66 +1,64 @@
-clc; clear; close all; 
+function [Y, reconstructedY, avgMAE] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n)
+    MVOutputPath = 'MVOutput\';
+    if ~exist(MVOutputPath,'dir')
+        mkdir(MVOutputPath)
+    end
 
-yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = uint32(300);
-width  = uint32(352);
-height = uint32(288);
-blockSize = 8;
-r = 2;
-n = 1;
+    approximatedResidualOutputPath = 'approximatedResidualOutput\';
+    if ~exist(approximatedResidualOutputPath,'dir')
+        mkdir(approximatedResidualOutputPath)
+    end
 
-MVOutputPath = 'MVOutput\';
-if ~exist(MVOutputPath,'dir')
-    mkdir(MVOutputPath)
-end
+    absoluteResidualNoMCOutputPath = 'absoluteResidualNoMCOutput\';
+    if ~exist(absoluteResidualNoMCOutputPath,'dir')
+        mkdir(absoluteResidualNoMCOutputPath)
+    end
 
-approximatedResidualOutputPath = 'approximatedResidualOutput\';
-if ~exist(approximatedResidualOutputPath,'dir')
-    mkdir(approximatedResidualOutputPath)
-end
+    absoluteResidualWithMCOutputPath = 'absoluteResidualWithMCOutput\';
+    if ~exist(absoluteResidualWithMCOutputPath,'dir')
+        mkdir(absoluteResidualWithMCOutputPath)
+    end
 
-absoluteResidualNoMCOutputPath = 'absoluteResidualNoMCOutput\';
-if ~exist(absoluteResidualNoMCOutputPath,'dir')
-    mkdir(absoluteResidualNoMCOutputPath)
-end
+    encoderReconstructionOutputPath = 'encoderReconstructionOutput\';
+    if ~exist(encoderReconstructionOutputPath,'dir')
+        mkdir(encoderReconstructionOutputPath)
+    end
 
-absoluteResidualWithMCOutputPath = 'absoluteResidualWithMCOutput\';
-if ~exist(absoluteResidualWithMCOutputPath,'dir')
-    mkdir(absoluteResidualWithMCOutputPath)
-end
+    [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
+    paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
+    firstRefFrame(1:size(paddingY,1),1:size(paddingY,2)) = uint8(128);
+    absoluteResidualNoMC = zeros(height, width, nFrame);
+    absoluteResidualWithMC = zeros(height, width, nFrame);
+    reconstructedY = uint8(zeros(height, width, nFrame));
+    avgMAE = zeros(1, nFrame);
+    referenceFrame = firstRefFrame;
 
-encoderReconstructionOutputPath = 'encoderReconstructionOutput\';
-if ~exist(encoderReconstructionOutputPath,'dir')
-    mkdir(encoderReconstructionOutputPath)
-end
+    for currentFrameNum = 1:nFrame
+        absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(int32(paddingY(1:height,1:width,currentFrameNum)) - int32(referenceFrame(1:height, 1:width))));
 
-[Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
-paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
-firstRefFrame(1:size(paddingY,1),1:size(paddingY,2)) = uint8(128);
-absoluteResidualNoMC = zeros(height, width, nFrame);
-absoluteResidualWithMC = zeros(height, width, nFrame);
-referenceFrame = firstRefFrame;
+        [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedYFrame, avgMAEFrame] = ex3_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n);
+        referenceFrame = reconstructedYFrame;
+        reconstructedY(:,:,currentFrameNum) = reconstructedYFrame(1:height,1:width);
+        avgMAE(1, currentFrameNum) = avgMAEFrame;
 
-for currentFrameNum = 1:nFrame
-    absoluteResidualNoMC(:,:,currentFrameNum) = uint8(abs(paddingY(1:height,1:width,currentFrameNum) - referenceFrame(1:height, 1:width)));
+        absoluteResidualWithMC(:,:,currentFrameNum) = uint8(abs(approximatedResidualFrame(1:height,1:width)));
 
-    [MVCell, approximatedResidualCell, approximatedResidualFrame, reconstructedY] = ex3_motionEstimate(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, n);
-    referenceFrame = reconstructedY;
+        MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+        save(MVFilePath, 'MVCell');
+        approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
+        save(approximatedResidualFilePath, 'approximatedResidualCell');
+
+        YOnlyFilePath = [encoderReconstructionOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
+        fid = createOrClearFile(YOnlyFilePath);
+        fwrite(fid,uint8(reconstructedYFrame(1:height,1:width)),'uchar');
+        fclose(fid);
+    end
+
+    plotResidual(absoluteResidualNoMC, nFrame, absoluteResidualNoMCOutputPath);
+    plotResidual(absoluteResidualWithMC, nFrame, absoluteResidualWithMCOutputPath);
     
-    absoluteResidualWithMC(:,:,currentFrameNum) = approximatedResidualFrame;
-    
-    MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-    save(MVFilePath, 'MVCell');
-    approximatedResidualFilePath = [approximatedResidualOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
-    save(approximatedResidualFilePath, 'approximatedResidualCell');
-
-    YOnlyFilePath = [encoderReconstructionOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
-    fid = createOrClearFile(YOnlyFilePath);
-    fwrite(fid,uint8(reconstructedY(:,:)),'uchar');
-    fclose(fid);
+    ex3_decoder(nFrame, width, height, blockSize);
 end
-
-plotResidual(absoluteResidualNoMC, nFrame, absoluteResidualNoMCOutputPath);
-plotResidual(absoluteResidualWithMC, nFrame, absoluteResidualWithMCOutputPath);
 
 
 function plotResidual(Residual, nFrame, rgbOutputPath)

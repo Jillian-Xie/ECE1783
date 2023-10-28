@@ -55,7 +55,7 @@ function ex3_decoder(nFrame, width, height, blockSize)
         
         YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
         fid = createOrClearFile(YOnlyFilePath);
-        fwrite(fid,uint8(curFrame(:,:)),'uchar');
+        fwrite(fid,uint8(curFrame(1:height,1:width)),'uchar');
         fclose(fid);
         
         refFrame = curFrame;
