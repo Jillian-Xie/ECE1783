@@ -18,6 +18,9 @@ varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
 varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
 plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
+generateOutputFile(yuvInputFileName, nFrame, width, height, 8, 4, 3);
+
+
 function plotImplementationNotes(yuvInputFileName, width, height, nFrame)
     r = 4;
     n = 3;
@@ -125,6 +128,41 @@ function varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
 end
 
 
+function generateOutputFile(yuvInputFileName, nFrame, width, height, blockSize, r, n)
+    [Y, reconstructedFrame, avgMAE] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+    reconstructedY(1:width,1:height,1:nFrame) = uint8(0);
+    yuvInputFileNameSeparator = split(yuvInputFileName, '.');
+    widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
+    heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
+
+    MV_X(1:heightBlockNum,1:widthBlockNum,1:nFrame) = int32(0);
+    MV_Y(1:heightBlockNum,1:widthBlockNum,1:nFrame) = int32(0);
+
+    for i=1:nFrame
+        reconstructedY(:,:,i) = reconstructedFrame(1:height,1:width,i)';
+    end
+    yuvOutputFileName = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_encoderReconstructionOutput', filesep, yuvInputFileNameSeparator{1,1}, num2str(nFrame), '.yuv');
+    fid = createOrClearFile(yuvOutputFileName);
+    for i=1:nFrame
+    fwrite(fid,uint8(reconstructedY(:,:,i)),'uchar');
+    end
+    fclose(fid);
+
+    MVInputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_MVOutput', filesep);
+    for i=1:nFrame
+        MVFilePath = [MVInputPath, sprintf('%04d',i), '.mat'];
+        load(MVFilePath, "MVCell");
+        for widthBlockIndex = 1:widthBlockNum
+            for heightBlockIndex = 1:heightBlockNum
+                MV_X(heightBlockIndex,widthBlockIndex,i) = MVCell{heightBlockIndex,widthBlockIndex}(1);
+                MV_Y(heightBlockIndex,widthBlockIndex,i) = MVCell{heightBlockIndex,widthBlockIndex}(2);
+            end
+        end
+    end
+    MVOutputFileName = strcat(MVInputPath, filesep, "MVTextFile.txt");
+    MVResult = [MV_X;MV_Y];
+    writematrix(MVResult, MVOutputFileName);
+end
 
 function plotAgainstFrame(x_frame, yVals, legends, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath)
     figure

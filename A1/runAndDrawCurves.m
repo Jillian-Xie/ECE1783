@@ -1,5 +1,6 @@
 function runAndDrawCurves(fig_title, x_axis, y_axis, varargin) % varargin: parameters
 plotOutputPath = 'Plots\';
+
 y(1:varargin{1}.nFrame, 1:(nargin-3)) = double(0.0);
 x(1:varargin{1}.nFrame, 1:(nargin-3)) = y;
 
@@ -74,4 +75,4 @@ title("Execution Times (i = " + int2str(varargin{1}.blockSize) + " qp = " + int2
 xlabel("IPP");
 ylabel("time(s)");
 legend({'Encoder', 'Decoder'},'Location','southwest');
-saveas(gcf, fullfile(plotOutputPath + "Execution_Times_" + int2str(varargin{1}.blockSize) + '_' + int2str(varargin{1}.r) + '_' + int2str(varargin{1}.QP) + ".jpeg"));
+saveas(gcf, fullfile(plotOutputPath + "Execution_Times_" + x_axis + '_' + y_axis + '_' + int2str(varargin{1}.blockSize) + '_' + int2str(varargin{1}.r) + '_' + int2str(varargin{1}.QP) + ".jpeg"));
