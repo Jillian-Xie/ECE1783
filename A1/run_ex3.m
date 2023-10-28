@@ -16,6 +16,17 @@ end
 varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
 varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
 varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+
+function plotImplementationNotes(yuvInputFileName, width, height, nFrame)
+    r = 4;
+    n = 3;
+    blockSizes = [2, 8, 64];
+    for i = 1:size(blockSizes, 2)
+        blockSize = blockSizes(1, i);
+        ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+    end
+end
 
 function varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
     r = 4;

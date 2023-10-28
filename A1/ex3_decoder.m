@@ -1,11 +1,12 @@
-function ex3_decoder(nFrame, width, height, blockSize)
-    MVOutputPath = 'MVOutput\';
-    ResidualOutputPath = 'approximatedResidualOutput\';
+function ex3_decoder(yuvInputFileName, nFrame, width, height, blockSize)
+    yuvInputFileNameSeparator = split(yuvInputFileName, '.');
+    
+    MVOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_MVOutput', filesep);
+    ResidualOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_approximatedResidualOutput', filesep);
     assert(exist(MVOutputPath,'dir') > 0);
     assert(exist(ResidualOutputPath,'dir') > 0);
     
-    DecoderOutputPath = 'DecoderOutput\';
-    
+    DecoderOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_DecoderOutput', filesep);
     if ~exist(DecoderOutputPath,'dir')
         mkdir(DecoderOutputPath)
     end
