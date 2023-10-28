@@ -14,9 +14,9 @@ if ~exist(plotOutputPath,'dir')
 end
 
 varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
 varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+% plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
 function plotImplementationNotes(yuvInputFileName, width, height, nFrame)
     r = 4;
@@ -35,9 +35,16 @@ function varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOu
     PSNRs = zeros(size(blockSizes, 2), nFrame);
     MAEs = zeros(size(blockSizes, 2), nFrame);
     legends = strings(1, size(blockSizes, 2));
+    disp('varying i');
     for i = 1:size(blockSizes, 2)
         blockSize = blockSizes(1, i);
-        [Y, reconstructedYFrame, avgMAE] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+        tic;
+        [Y, reconstructedYFrame, avgMAE, residualMagnitude] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+        encodingTime = toc;
+        disp(strcat('i=', num2str(blockSize), ', residualMagnitude is:'))
+        disp(residualMagnitude)
+        disp(strcat('encoding time is:'))
+        disp(encodingTime)
         for j = 1:nFrame
             PSNRFrame = psnr(reconstructedYFrame(:,:,j), Y(:,:,j));
             PSNRs(i, j) = PSNRFrame;
@@ -69,7 +76,7 @@ function varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
     legends = strings(1, size(ns, 2));
     for i = 1:size(ns, 2)
         n = ns(1, i);
-        [Y, reconstructedYFrame, avgMAE] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+        [Y, reconstructedYFrame, avgMAE, residualMagnitude] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
         for j = 1:nFrame
             PSNRFrame = psnr(reconstructedYFrame(:,:,j), Y(:,:,j));
             PSNRs(i, j) = PSNRFrame;
@@ -99,9 +106,16 @@ function varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
     PSNRs = zeros(size(rs, 2), nFrame);
     MAEs = zeros(size(rs, 2), nFrame);
     legends = strings(1, size(rs, 2));
+    disp('varying r');
     for i = 1:size(rs, 2)
         r = rs(1, i);
-        [Y, reconstructedYFrame, avgMAE] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+        tic;
+        [Y, reconstructedYFrame, avgMAE, residualMagnitude] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+        encodingTime = toc;
+        disp(strcat('r=', num2str(r), ', residualMagnitude is:'))
+        disp(residualMagnitude)
+        disp(strcat('encoding time is:'))
+        disp(encodingTime)
         for j = 1:nFrame
             PSNRFrame = psnr(reconstructedYFrame(:,:,j), Y(:,:,j));
             PSNRs(i, j) = PSNRFrame;
