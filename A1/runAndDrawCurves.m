@@ -54,9 +54,7 @@ for i = 1:(nargin-3)
                 x(j, i) = x(j - 1, i) + sum(strlength(QTCCoeffs(j,:)), "all") + sum(strlength(MDiffs(j,:)), "all");
             end
         end
-
     end
-
 end
 
 plot(x, y, '-o');
