@@ -6,8 +6,8 @@ residualBlock = int32(currentBlock);
 referenceBlock(1:blockSize,1:blockSize) = int32(128);
 for mvX = -r:r
     for mvY = -r:r
-        refWidthPixelIndex = int32((widthBlockIndex-1)*blockSize + 1 + mvX);
-        refHeightPixelIndex = int32((heightBlockIndex-1)*blockSize + 1 + mvY);
+        refWidthPixelIndex = int32((int32(widthBlockIndex)-1)*blockSize + 1 + mvX);
+        refHeightPixelIndex = int32((int32(heightBlockIndex)-1)*blockSize + 1 + mvY);
         if checkFrameBoundary(refWidthPixelIndex, refHeightPixelIndex, blockSize, refFrame) == 1
             refBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, refFrame, mvX, mvY);
             mae = sum(abs(int32(currentBlock) - int32(refBlock)), "all") / numel(currentBlock);

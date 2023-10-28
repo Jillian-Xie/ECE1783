@@ -1,4 +1,4 @@
-function [Y, reconstructedY, avgMAE] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n)
+function [Y, reconstructedY, avgMAE, residualMagnitude] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n)
     yuvInputFileNameSeparator = split(yuvInputFileName, '.');
     
     MVOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_MVOutput', filesep);
@@ -52,6 +52,8 @@ function [Y, reconstructedY, avgMAE] = ex3(yuvInputFileName, nFrame, width, heig
     sourceY = uint8(zeros(height, width, nFrame));
     avgMAE = zeros(1, nFrame);
     referenceFrame = firstRefFrame;
+    
+    residualMagnitude = [];
 
     for currentFrameNum = 1:nFrame
         referenceY(:, :, currentFrameNum) = referenceFrame(1:height, 1:width);
@@ -66,6 +68,8 @@ function [Y, reconstructedY, avgMAE] = ex3(yuvInputFileName, nFrame, width, heig
         avgMAE(1, currentFrameNum) = avgMAEFrame;
 
         absoluteResidualWithMC(:,:,currentFrameNum) = uint8(abs(approximatedResidualFrame(1:height,1:width)));
+        
+        residualMagnitude = [residualMagnitude, sum(abs(approximatedResidualFrame(1:height,1:width)), 'all')];
 
         MVFilePath = [MVOutputPath, sprintf('%04d',currentFrameNum), '.mat'];
         save(MVFilePath, 'MVCell');
