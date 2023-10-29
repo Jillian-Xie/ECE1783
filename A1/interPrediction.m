@@ -12,6 +12,7 @@ QTCCoeffsFrame = strings([1, widthBlockNum * heightBlockNum]);
 MDiffsInt = [];
 
 for heightBlockIndex = 1:heightBlockNum
+    % MV by default is [0,0]
     previousMV = int32([0, 0]);
     for widthBlockIndex = 1:widthBlockNum
         
@@ -20,9 +21,10 @@ for heightBlockIndex = 1:heightBlockNum
         encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, blockSize);
         QTCCoeffsFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) = encodedQuantizedBlock;
         
-        % differential encoding
+        % Differential encoding
         MDiffsInt = [MDiffsInt, bestMV - previousMV];
         previousMV = bestMV;
+        
         reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
     end
 end

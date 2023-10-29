@@ -14,7 +14,7 @@ end
 SAD_h=abs(sum(int32(horizontalPredictionBlock),'all') - sum(int32(currentBlock),'all'));
 SAD_v=abs(sum(int32(verticalPredictionBlock),'all') - sum(int32(currentBlock),'all'));
 
-if(SAD_h>SAD_v)
+if(SAD_h>SAD_v) % decide mode by SAD
     mode=int32(0);
     predictedBlock=horizontalPredictionBlock;
 else

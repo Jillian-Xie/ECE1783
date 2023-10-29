@@ -8,7 +8,6 @@ heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
 modes = zeros(heightBlockNum, widthBlockNum);
 reconstructedFrame(1:height,1:width) = uint8(128);
-approximatedResidualCell = cell(heightBlockNum, widthBlockNum);
 approximatedResidualFrame = uint8(zeros(height, width));
 
 QTCCoeffsFrame = strings([1, widthBlockNum * heightBlockNum]);
@@ -20,6 +19,7 @@ for heightBlockIndex = 1:heightBlockNum
       
         currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
         
+        % the left-𝑖 (or top-𝑖) border reconstructed samples
         [verticalRefernce, horizontalReference] = getIntraPredictionReference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
         [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize,QP);
         
@@ -31,8 +31,6 @@ for heightBlockIndex = 1:heightBlockNum
         previousMode = mode;
         
         modes(heightBlockIndex, widthBlockIndex) = mode;
-        
-        approximatedResidualCell{heightBlockIndex, widthBlockIndex} = approximatedResidualBlock;
         approximatedResidualFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = approximatedResidualBlock;
         
         reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
