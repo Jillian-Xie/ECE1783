@@ -5,6 +5,7 @@ function frames = paddingFrames(Y, blockSize, width, height, nFrame)
     frames = uint8(zeros(vertical*blockSize, horizontal*blockSize, nFrame));
     frames(1:height, 1:width, :) = Y;
     
+    % pad with gray if necessary
     if(rem(width,blockSize)~=0)
         frames(:, width+1:horizontal*blockSize, :)=uint8(128);
     end

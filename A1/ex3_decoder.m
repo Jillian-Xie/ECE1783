@@ -1,6 +1,7 @@
 function ex3_decoder(yuvInputFileName, nFrame, width, height, blockSize)
     yuvInputFileNameSeparator = split(yuvInputFileName, '.');
     
+    % read the files dumped by the encoder
     MVOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_MVOutput', filesep);
     ResidualOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_approximatedResidualOutput', filesep);
     assert(exist(MVOutputPath,'dir') > 0);
@@ -43,6 +44,8 @@ function ex3_decoder(yuvInputFileName, nFrame, width, height, blockSize)
                         verticalIndex = (i - 1) * blockSize + ii;
                         horizontalIndex = (j - 1) * blockSize + jj;
                         
+                        % don't need to fill pixels that's outside of the
+                        % frame
                         if horizontalIndex > width || verticalIndex > height
                             continue
                         end
@@ -54,6 +57,7 @@ function ex3_decoder(yuvInputFileName, nFrame, width, height, blockSize)
             end
         end
         
+        % save the Y-only file for comparison
         YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
         fid = createOrClearFile(YOnlyFilePath);
         fwrite(fid,uint8(curFrame(1:height,1:width)),'uchar');

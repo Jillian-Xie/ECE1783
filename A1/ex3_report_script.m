@@ -1,22 +1,24 @@
 clc; clear; close all; 
 
-% yuvInputFileName = 'akiyo_qcif.yuv';
-% width  = uint32(176);
-% height = uint32(144);
-% nFrame = uint32(10);
-% x_frame = [1:nFrame];
-% 
-% yuvInputFileNameSeparator = split(yuvInputFileName, '.');
-% plotOutputPath = strcat('ex3_', yuvInputFileNameSeparator{1,1}, '_Plots', filesep);
-% 
-% if ~exist(plotOutputPath,'dir')
-%     mkdir(plotOutputPath)
-% end
-% 
-% varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+yuvInputFileName = 'akiyo_qcif.yuv';
+width  = uint32(176);
+height = uint32(144);
+nFrame = uint32(10);
+x_frame = [1:nFrame];
+
+yuvInputFileNameSeparator = split(yuvInputFileName, '.');
+plotOutputPath = strcat('ex3_', yuvInputFileNameSeparator{1,1}, '_Plots', filesep);
+
+if ~exist(plotOutputPath,'dir')
+    mkdir(plotOutputPath)
+end
+
+% Plot PSNR and average MAE graphs by varying i, n or r.
+varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% Plot the predicted frames and residuals with and without motion control
+plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
 yuvInputFileName = 'foreman420_cif.yuv';
 width  = uint32(352);
@@ -31,13 +33,16 @@ if ~exist(plotOutputPath,'dir')
     mkdir(plotOutputPath)
 end
 
-% varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
-% plotImplementationNotes(yuvInputFileName, width, height, nFrame);
+% Plot PSNR and average MAE graphs by varying i, n or r.
+varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath);
+% Plot the predicted frames and residuals with and without motion control
+plotImplementationNotes(yuvInputFileName, width, height, nFrame);
 
+% Generate the Y-only recontructed file and the motion vectors for the
+% first 10 frames of the Foreman CIF
 generateOutputFile(yuvInputFileName, nFrame, width, height, 8, 4, 3);
-
 
 function plotImplementationNotes(yuvInputFileName, width, height, nFrame)
     r = 4;
@@ -62,6 +67,7 @@ function varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOu
         tic;
         [Y, reconstructedYFrame, avgMAE, residualMagnitude] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n);
         encodingTime = toc;
+        % Also report the encoding time and residual magnitude
         disp(strcat('i=', num2str(blockSize), ', residualMagnitude is:'))
         disp(residualMagnitude)
         disp(strcat('encoding time is:'))
@@ -80,7 +86,6 @@ function varyBlockSizes(yuvInputFileName, width, height, nFrame, x_frame, plotOu
     filenameStr = strcat('psnr_r_', num2str(r), '_n_', num2str(n), '_varying_i.jpeg');
     plotAgainstFrame(x_frame, PSNRs, legends, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath);
     
-    
     xaxisLabel = 'Frame';
     yaxisLabel = 'MAE';
     titleStr = strcat('MAE when r=', num2str(r), ', n=', num2str(n), ' and varying i');
@@ -97,7 +102,7 @@ function varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
     legends = strings(1, size(ns, 2));
     for i = 1:size(ns, 2)
         n = ns(1, i);
-        [Y, reconstructedYFrame, avgMAE, residualMagnitude] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+        [Y, reconstructedYFrame, avgMAE, ~] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n);
         for j = 1:nFrame
             PSNRFrame = psnr(reconstructedYFrame(:,:,j), Y(:,:,j));
             PSNRs(i, j) = PSNRFrame;
@@ -111,7 +116,6 @@ function varyN(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
     titleStr = strcat('PSNR when r=', num2str(r), ', i=', num2str(blockSize), ' and varying n');
     filenameStr = strcat('psnr_r_', num2str(r), '_i_', num2str(blockSize), '_varying_n.jpeg');
     plotAgainstFrame(x_frame, PSNRs, legends, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath);
-    
     
     xaxisLabel = 'Frame';
     yaxisLabel = 'MAE';
@@ -133,6 +137,7 @@ function varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
         tic;
         [Y, reconstructedYFrame, avgMAE, residualMagnitude] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n);
         encodingTime = toc;
+        % Also report the encoding time and residual magnitude
         disp(strcat('r=', num2str(r), ', residualMagnitude is:'))
         disp(residualMagnitude)
         disp(strcat('encoding time is:'))
@@ -151,7 +156,6 @@ function varyR(yuvInputFileName, width, height, nFrame, x_frame, plotOutputPath)
     filenameStr = strcat('psnr_i_', num2str(blockSize), '_n_', num2str(n), '_varying_r.jpeg');
     plotAgainstFrame(x_frame, PSNRs, legends, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath);
     
-    
     xaxisLabel = 'Frame';
     yaxisLabel = 'MAE';
     titleStr = strcat('MAE when i=', num2str(blockSize), ', n=', num2str(n), ' and varying r');
@@ -161,14 +165,12 @@ end
 
 
 function generateOutputFile(yuvInputFileName, nFrame, width, height, blockSize, r, n)
-    [Y, reconstructedFrame, avgMAE] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n);
+    [~, reconstructedFrame, ~] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n);
     reconstructedY(1:width,1:height,1:nFrame) = uint8(0);
     yuvInputFileNameSeparator = split(yuvInputFileName, '.');
     widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
     heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
-    MV_X(1:heightBlockNum,1:widthBlockNum,1:nFrame) = int32(0);
-    MV_Y(1:heightBlockNum,1:widthBlockNum,1:nFrame) = int32(0);
     MVs(heightBlockNum * widthBlockNum * nFrame, 2) = int32(0);
 
     for i=1:nFrame
@@ -177,7 +179,7 @@ function generateOutputFile(yuvInputFileName, nFrame, width, height, blockSize, 
     yuvOutputFileName = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_encoderReconstructionOutput', filesep, yuvInputFileNameSeparator{1,1}, num2str(nFrame), '.yuv');
     fid = createOrClearFile(yuvOutputFileName);
     for i=1:nFrame
-    fwrite(fid,uint8(reconstructedY(:,:,i)),'uchar');
+        fwrite(fid,uint8(reconstructedY(:,:,i)),'uchar');
     end
     fclose(fid);
 
