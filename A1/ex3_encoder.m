@@ -1,4 +1,4 @@
-function [Y, reconstructedY, avgMAE, residualMagnitude] = ex3(yuvInputFileName, nFrame, width, height, blockSize, r, n)
+function [Y, reconstructedY, avgMAE, residualMagnitude] = ex3_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, n)
     yuvInputFileNameSeparator = split(yuvInputFileName, '.');
     
     MVOutputPath = strcat('ex3Output', filesep, 'ex3_', yuvInputFileNameSeparator{1,1}, '_i', num2str(blockSize), '_MVOutput', filesep);
