@@ -12,7 +12,7 @@ I_Period = 1;
 
 % encoder
 tic
-ex4_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period)
+encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period)
 toc
 
 load('QTCCoeffs.mat', 'QTCCoeffs');
@@ -20,5 +20,5 @@ load('MDiffs.mat', 'MDiffs');
 
 % decoder
 tic
-ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs);
+decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs);
 toc

@@ -1,13 +1,9 @@
-function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs)
-    reconstructedY = zeros(width, height, nFrame);
+function decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs)
     DecoderOutputPath = 'DecoderOutput\';
+    reconstructedY = zeros(width, height, nFrame);
+    
     if ~exist(DecoderOutputPath,'dir')
         mkdir(DecoderOutputPath)
-    end
-    
-    visualizePath = strcat('ex4Output', filesep, 'ex4_i', num2str(blockSize), '_qp_', num2str(QP), '_iperiod_', num2str(I_Period), '_DecoderOutput', filesep);
-    if ~exist(visualizePath,'dir')
-        mkdir(visualizePath)
     end
     
     widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
@@ -74,8 +70,6 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
         refFrame = reconstructedFrame;
         reconstructedY(:,:,currentFrameNum) = reconstructedFrame(1:height,1:width)';
     end
-    
-    plotResidual(reconstructedY, nFrame, visualizePath);
     % get YOnly vedio
     YOnlyFilePath = [DecoderOutputPath, 'DecoderOutput', '.yuv'];
     fid = createOrClearFile(YOnlyFilePath);
@@ -83,18 +77,6 @@ function ex4_decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, 
     fwrite(fid,uint8(reconstructedY(:,:,i)),'uchar');
     end
     fclose(fid);
-end
-
-function plotResidual(Residual, nFrame, rgbOutputPath)
-    R = Residual;
-    G = Residual;
-    B = Residual;
-    for i=1:nFrame
-        im(:,:,1)=R(:,:,i);
-        im(:,:,2)=G(:,:,i);
-        im(:,:,3)=B(:,:,i);
-        imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
-    end
 end
 
 function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP)

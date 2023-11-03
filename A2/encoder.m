@@ -1,4 +1,4 @@
-function ex4_encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period)
+function encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period)
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 
