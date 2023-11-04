@@ -1,4 +1,4 @@
-function decoder(nFrame, width, height, blockSize, QP, I_Period, QTCCoeffs, MDiffs)
+function decoder(nFrame, width, height, blockSize, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs)
     DecoderOutputPath = 'DecoderOutput\';
     reconstructedY = zeros(width, height, nFrame);
     

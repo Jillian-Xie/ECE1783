@@ -1,4 +1,4 @@
-function [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize,QP)
+function [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize, QP, nRefFrames, VBSEnable, FMEEnable, FastME)
 verticalPredictionBlock=zeros(blockSize, blockSize);
 horizontalPredictionBlock=zeros(blockSize, blockSize);
 predictedBlock = zeros(blockSize, blockSize);

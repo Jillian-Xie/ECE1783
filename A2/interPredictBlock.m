@@ -1,4 +1,4 @@
-function [bestMV, quantizedBlock, reconstructedBlock] = interPredictBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP)
+function [bestMV, quantizedBlock, reconstructedBlock] = interPredictBlock(refFrame, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, nRefFrames, VBSEnable, FMEEnable, FastME)
 bestMAE = Inf;
 bestMV = int32([0, 0]);
 currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);

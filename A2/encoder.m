@@ -1,4 +1,4 @@
-function encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period)
+function encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME)
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 
@@ -17,13 +17,13 @@ MDiffs = strings([nFrame, 1]);
 for currentFrameNum = 1:nFrame
     if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
         % First frame needs to be I frame
-        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP);
+        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP, nRefFrames, VBSEnable, FMEEnable, FastME);
         QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         % Update reference frame with reconstructed frame
         referenceFrame = reconstructedFrame;
     else
-        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, QP);
+        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, QP, nRefFrames, VBSEnable, FMEEnable, FastME);
         QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         % Update reference frame with reconstructed frame
