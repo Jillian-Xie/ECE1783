@@ -1,6 +1,6 @@
-function decoder(nFrame, width, height, blockSize, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs)
+function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs)
     DecoderOutputPath = 'DecoderOutput\';
-    reconstructedY = zeros(width, height, nFrame);
+    reconstructedY = zeros(height, width, nFrame);
     
     if ~exist(DecoderOutputPath,'dir')
         mkdir(DecoderOutputPath)
@@ -47,16 +47,17 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, nRefFrames, VBS
             end
         else
             % P frame
-            MDiffRLEDecoded = reverseRLE(MDiffFrame, widthBlockNum * heightBlockNum * 2);
+            MDiffRLEDecoded = reverseRLE(MDiffFrame, widthBlockNum * heightBlockNum * 3);
             for heightBlockIndex = 1:heightBlockNum
-                previousMV = int32([0, 0]); % assume horizontal in the beginning
+                previousMV = int32([0, 0, 0]);
                 for widthBlockIndex = 1:widthBlockNum
                     approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP);
                     
                     blockNum = (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex;
-                    MVDiff = MDiffRLEDecoded(1, blockNum * 2 - 1 : blockNum * 2);
+                    MVDiff = MDiffRLEDecoded(1, blockNum * 3 - 2 : blockNum * 3);
                     MV = int32(previousMV) + int32(MVDiff);
                     previousMV = MV;
+                    refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
                     
                     top = int32((heightBlockIndex-1)*blockSize + 1);
                     bottom = int32(heightBlockIndex * blockSize);
@@ -67,16 +68,17 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, nRefFrames, VBS
                 end
             end
         end
-        refFrame = reconstructedFrame;
-        reconstructedY(:,:,currentFrameNum) = reconstructedFrame(1:height,1:width)';
+        reconstructedY(:,:,currentFrameNum) = reconstructedFrame;
     end
+
     % get YOnly vedio
     YOnlyFilePath = [DecoderOutputPath, 'DecoderOutput', '.yuv'];
     fid = createOrClearFile(YOnlyFilePath);
     for i=1:nFrame
-    fwrite(fid,uint8(reconstructedY(:,:,i)),'uchar');
+    fwrite(fid,uint8(reconstructedY(:,:,i)'),'uchar');
     end
     fclose(fid);
+
 end
 
 function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, heightBlockIndex, widthBlockIndex, widthBlockNum, blockSize, QP)

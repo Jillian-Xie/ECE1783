@@ -1,4 +1,4 @@
-function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP, nRefFrames, VBSEnable, FMEEnable, FastME)
+function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP, VBSEnable, FMEEnable, FastME)
 
 height = size(currentFrame,1);
 width  = size(currentFrame,2);

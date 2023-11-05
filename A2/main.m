@@ -1,16 +1,16 @@
 clc; clear; close all; 
 
 % config info
-yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = 10;
+yuvInputFileName = 'synthetic.yuv';
+nFrame = 4;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 8;
 r = 2;
 QP = 0;
-I_Period = 1;
+I_Period = 3;
 
-nRefFrames = 1;
+nRefFrames = 2;
 VBSEnable = false;
 FMEEnable = false;
 FastME = false;
@@ -25,5 +25,5 @@ load('MDiffs.mat', 'MDiffs');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs);
+decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs);
 toc
