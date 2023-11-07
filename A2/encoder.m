@@ -6,7 +6,7 @@ function encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Pe
 paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
 
 % the reference frame for intra- or inter-frame prediction
-referenceFrame(1:size(paddingY,1),1:size(paddingY,2),1) = uint8(128); 
+referenceFrames(1:size(paddingY,1),1:size(paddingY,2),1) = uint8(128); 
 
 % Reconstructed Y-only frames (with padding)
 reconsructedY(1:size(paddingY,1),1:size(paddingY,2),1:nFrame) = paddingY;
@@ -26,15 +26,15 @@ for currentFrameNum = 1:nFrame
         % Update reconstructed Y-only frames with reconstructed frame
         reconsructedY(:, :, currentFrameNum) = reconstructedFrame;
         % Update reference frame with reconstructed frame
-        referenceFrame = reconstructedFrame;
+        referenceFrames = reconstructedFrame;
     else
-        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrame, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME);
+        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME);
         QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         % Update reconstructed Y-only frames with reconstructed frame
         reconsructedY(:, :, currentFrameNum) = reconstructedFrame;
         % Update reference frame with reconstructed Y-only frames
-        referenceFrame = updateRefFrames(reconsructedY, nRefFrames, currentFrameNum, I_Period);
+        referenceFrames = updateRefFrames(reconsructedY, nRefFrames, currentFrameNum, I_Period);
     end
 end
 
