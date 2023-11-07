@@ -13,7 +13,7 @@ I_Period = 3;
 nRefFrames = 2;
 VBSEnable = false;
 FMEEnable = false;
-FastME = false;
+FastME = true;
 
 % encoder
 tic
