@@ -9,7 +9,7 @@ numRefFrames = size(refFrames,3);
 for indexRefFrame = 1:numRefFrames
     refFrame = refFrames(:,:,indexRefFrame);
     
-    [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, r);
+    [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(indexRefFrame, refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, r);
     
     if MAEFrame < bestMAE
         bestMAE = MAEFrame;
@@ -20,7 +20,7 @@ for indexRefFrame = 1:numRefFrames
 end
 end
 
-function [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, r)
+function [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(indexRefFrame, refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, r)
     MAEFrame = Inf;
     MVFrame = int32([0, 0, 0]);
     
