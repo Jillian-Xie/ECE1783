@@ -16,7 +16,7 @@ for heightBlockIndex = 1:heightBlockNum
     previousMV = int32([0, 0, 0]);
     for widthBlockIndex = 1:widthBlockNum
         
-        [bestMV, quantizedBlock, reconstructedBlock] = interPredictBlock(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize, QP);
+        [bestMV, quantizedBlock, reconstructedBlock] = interPredictBlock(referenceFrame, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize, QP, VBSEnable, FMEEnable, FastME, previousMV);
         
         encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, blockSize);
         QTCCoeffsFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) = encodedQuantizedBlock;

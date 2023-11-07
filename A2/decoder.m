@@ -63,7 +63,7 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                     bottom = int32(heightBlockIndex * blockSize);
                     left = int32((widthBlockIndex-1) * blockSize + 1);
                     right = int32(widthBlockIndex * blockSize);
-                    thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,2) : bottom + MV(1,2), left + MV(1,1) : right + MV(1,1)));
+                    thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
                     reconstructedFrame(top : bottom, left : right) = thisBlock;
                 end
             end
