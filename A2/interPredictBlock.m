@@ -4,7 +4,7 @@ widthPixelIndex = int32((int32(widthBlockIndex)-1)*blockSize + 1);
 heightPixelIndex = int32((int32(heightBlockIndex)-1)*blockSize + 1);
 
 if FastME == false
-    [bestMV, referenceBlock, residualBlock] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r, VBSEnable);
+    [split, bestMV, referenceBlock, residualBlock] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r, VBSEnable, QP);
 else
     [bestMV, referenceBlock, residualBlock] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
 end
