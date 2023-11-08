@@ -1,4 +1,4 @@
-function [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize, QP, VBSEnable, FMEEnable, FastME)
+function [mode, encodedQuantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefference, horizontalRefference, currentBlock, blockSize, QP, VBSEnable, FMEEnable, FastME)
 verticalPredictionBlock=zeros(blockSize, blockSize);
 horizontalPredictionBlock=zeros(blockSize, blockSize);
 predictedBlock = zeros(blockSize, blockSize);
@@ -23,8 +23,7 @@ else
 end
 
 residualBlock = int32(currentBlock) - int32(predictedBlock);
-transformedBlock = dct2(residualBlock);
-quantizedBlock = quantize(transformedBlock, QP);
+[encodedQuantizedBlock, quantizedBlock] = dctQuantizeAndEncode(residualBlock, QP, blockSize);
 rescaledBlock = rescaling(quantizedBlock, QP);
 approximatedResidualBlock = idct2(rescaledBlock);
 reconstructedBlock = int32(approximatedResidualBlock) + int32(predictedBlock);

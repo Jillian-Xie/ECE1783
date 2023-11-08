@@ -21,9 +21,8 @@ for heightBlockIndex = 1:heightBlockNum
         
         % the left-𝑖 (or top-𝑖) border reconstructed samples
         [verticalRefernce, horizontalReference] = getIntraPredictionReference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
-        [mode, quantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize,QP);
+        [mode, encodedQuantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize,QP);
         
-        encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, blockSize);
         QTCCoeffsFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) = encodedQuantizedBlock;
         
         % differential encoding

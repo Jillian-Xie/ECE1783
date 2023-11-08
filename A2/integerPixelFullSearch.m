@@ -77,17 +77,13 @@ else
     totalBitsNonSplit = 0;
     totalBitsSplit = 0;
     
-    transformedBlock = dct2(bestResidualBlockNonSplit);
-    quantizedBlock = quantize(transformedBlock, QP);
-    encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, blockSize);
+    [encodedQuantizedBlock, ~] = dctQuantizeAndEncode(bestResidualBlockNonSplit, QP, blockSize);
     totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlock);
     
     smallBlockQP = QP - 1;
     if smallBlockQP < 0; smallBlockQP = 0; end
     for splitIndex = 1:4
-        transformedBlock = dct2(bestResidualBlockSplit(:, :, splitIndex));
-        quantizedBlock = quantize(transformedBlock, smallBlockQP);
-        encodedQuantizedBlock = encodeQuantizedBlock(quantizedBlock, splitSize);
+        [encodedQuantizedBlock, ~] = dctQuantizeAndEncode(bestResidualBlockSplit(:, :, splitIndex), smallBlockQP, splitSize);
         totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlock);
     end
     

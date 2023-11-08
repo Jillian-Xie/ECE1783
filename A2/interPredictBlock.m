@@ -1,4 +1,4 @@
-function [bestMV, quantizedBlock, reconstructedBlock] = interPredictBlock(refFrames, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, VBSEnable, FMEEnable, FastME, MVP)
+function [bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(refFrames, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, VBSEnable, FMEEnable, FastME, MVP)
 
 widthPixelIndex = int32((int32(widthBlockIndex)-1)*blockSize + 1);
 heightPixelIndex = int32((int32(heightBlockIndex)-1)*blockSize + 1);
@@ -10,8 +10,7 @@ else
 end
 
 bestMV = int32(bestMV);
-transformedBlock = dct2(residualBlock);
-quantizedBlock = quantize(transformedBlock, QP);
+[encodedQuantizedBlock, quantizedBlock] = dctQuantizeAndEncode(residualBlock, QP, blockSize);
 rescaledBlock = rescaling(quantizedBlock, QP);
 
 approximatedResidualBlock = idct2(rescaledBlock);
