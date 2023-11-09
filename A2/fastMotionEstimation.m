@@ -24,11 +24,14 @@ end
 function [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(indexRefFrame, refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, MVP)
 
 % Search the (0, 0) location
-refBlockFrame = refFrame(heightPixelIndex:heightPixelIndex+blockSize-1, widthPixelIndex:widthPixelIndex+blockSize-1);
-MAEFrame = sum(abs(int32(currentBlock) - int32(refBlockFrame)), "all") / numel(currentBlock);
-MVFrame = int32([0, 0, indexRefFrame-1]);
-residualBlockFrame = int32(currentBlock) - int32(refBlockFrame);
-
+if MVP(1) == 0 && MVP(2) == 0
+    MAEFrame = Inf;
+else
+    refBlockFrame = refFrame(heightPixelIndex:heightPixelIndex+blockSize-1, widthPixelIndex:widthPixelIndex+blockSize-1);
+    MAEFrame = sum(abs(int32(currentBlock) - int32(refBlockFrame)), "all") / numel(currentBlock);
+    MVFrame = int32([0, 0, indexRefFrame-1]);
+    residualBlockFrame = int32(currentBlock) - int32(refBlockFrame);
+end
 % Set the search origin to a predicted vector location and search this position
 originHeightPixelIndex = heightPixelIndex + MVP(1);
 originWidthPixelIndex = widthPixelIndex + MVP(2);
@@ -44,6 +47,7 @@ if checkFrameBoundary(originWidthPixelIndex, originHeightPixelIndex, blockSize, 
 
         % Search the four neighbouring positions to the new origin in a + shape
         while(1)
+            originalBlock = refFrame(originHeightPixelIndex:originHeightPixelIndex+blockSize-1, originWidthPixelIndex:originWidthPixelIndex+blockSize-1);
             neighbours = {[originHeightPixelIndex-blockSize, originWidthPixelIndex],...
                 [originHeightPixelIndex, originWidthPixelIndex-blockSize],...
                 [originHeightPixelIndex+blockSize, originWidthPixelIndex],...
@@ -59,7 +63,7 @@ if checkFrameBoundary(originWidthPixelIndex, originHeightPixelIndex, blockSize, 
                     if mae < MAEFrame
                         refBlockFrame = refBlock;
                         MAEFrame = mae;
-                        MVFrame = int32([originHeightPixelIndex-blockSize-heightPixelIndex, originWidthPixelIndex-widthPixelIndex, indexRefFrame-1]);
+                        MVFrame = int32([neighbourHeightPixelIndex-heightPixelIndex, neighbourWidthPixelIndex-widthPixelIndex, indexRefFrame-1]);
                         residualBlockFrame = int32(currentBlock)-int32(refBlockFrame);
                         originHeightPixelIndex = neighbourHeightPixelIndex;
                         originWidthPixelIndex = neighbourWidthPixelIndex;
