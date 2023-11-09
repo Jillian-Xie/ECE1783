@@ -1,14 +1,6 @@
-function [split, bestMV, referenceBlock, residualBlock] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r, VBSEnable, QP)
-
-bestMAENonSplit = Inf;
-bestMVNonSplit = int32([0, 0, 0]);
-
-bestMAESplit = Inf(1, 4);
-bestMVSplit = int32(zeros(4,3));
-
-splitSize = blockSize / 2;
-bestReferenceBlockSplit = zeros(splitSize, splitSize, 4);
-bestResidualBlockSplit = zeros(splitSize, splitSize, 4);
+function [bestMV, bestMAE, referenceBlock, residualBlock] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r)
+bestMAE = Inf;
+bestMV = int32([0, 0, 0]);
 
 currentBlock = currentFrame(heightPixelIndex:heightPixelIndex+blockSize-1,widthPixelIndex:widthPixelIndex+blockSize-1);
 
@@ -18,107 +10,14 @@ for indexRefFrame = 1:numRefFrames
     
     [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(indexRefFrame, refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, r);
     
-    if MAEFrame < bestMAENonSplit
-        bestMAENonSplit = MAEFrame;
-        bestMVNonSplit = MVFrame;
-        bestReferenceBlockNonSplit = refBlockFrame;
-        bestResidualBlockNonSplit = residualBlockFrame;
+    if MAEFrame < bestMAE
+        bestMAE = MAEFrame;
+        bestMV = MVFrame;
+        referenceBlock = refBlockFrame;
+        residualBlock = residualBlockFrame;
     end
     
-    if VBSEnable        
-        % we can calculate the hypothetical pixel indexes as if the
-        % blockSize is halved
-        topLeftWidthPixelIndex = widthPixelIndex;
-        topLeftHeightPixelIndex = heightPixelIndex;
-        
-        topRightWidthPixelIndex = widthPixelIndex + splitSize;
-        topRightHeightPixelIndex = heightPixelIndex;
-        
-        bottomLeftWidthPixelIndex = widthPixelIndex;
-        bottomLeftHeightPixelIndex = heightPixelIndex + splitSize;
-        
-        bottomRightWidthPixelIndex = widthPixelIndex + splitSize;
-        bottomRightHeightPixelIndex = heightPixelIndex + splitSize;
-        
-        topLeftSplit = currentBlock(1:splitSize, 1:splitSize);
-        [bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit] = ...
-            getSplitMVByIndex(1, bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit, ...
-                              indexRefFrame, refFrame, topLeftSplit, splitSize, topLeftWidthPixelIndex, topLeftHeightPixelIndex, r);
-        
-        topRightSplit = currentBlock(1:splitSize, splitSize+1:2*splitSize);
-        [bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit] = ...
-            getSplitMVByIndex(1, bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit, ...
-                              indexRefFrame, refFrame, topRightSplit, splitSize, topRightWidthPixelIndex, topRightHeightPixelIndex, r);
-        
-        bottomLeftSplit = currentBlock(splitSize+1:2*splitSize, 1:splitSize);
-        [bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit] = ...
-            getSplitMVByIndex(1, bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit, ...
-                              indexRefFrame, refFrame, bottomLeftSplit, splitSize, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, r);
-        
-        bottomRightSplit = currentBlock(splitSize+1:2*splitSize, splitSize+1:2*splitSize);
-        [bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit] = ... 
-            getSplitMVByIndex(1, bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit, ...
-                              indexRefFrame, refFrame, bottomRightSplit, splitSize, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, r);
-    end
 end
-
-if VBSEnable == false
-    split = false;
-    bestMV = bestMVNonSplit;
-    referenceBlock = bestReferenceBlockNonSplit;
-    residualBlock = bestResidualBlockNonSplit;
-else
-    SADNonSplit = bestMAENonSplit * blockSize * blockSize;
-    SADSplit = sum(bestMAESplit(1, 1:numRefFrames), "all") * splitSize * splitSize;
-    % https://ieeexplore.ieee.org/document/1626308
-    Lambda = 0.85 * (2 ^ ((QP-12) / 3));
-    
-    totalBitsNonSplit = 0;
-    totalBitsSplit = 0;
-    
-    [encodedQuantizedBlock, ~] = dctQuantizeAndEncode(bestResidualBlockNonSplit, QP, blockSize);
-    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlock);
-    
-    smallBlockQP = QP - 1;
-    if smallBlockQP < 0; smallBlockQP = 0; end
-    for splitIndex = 1:4
-        [encodedQuantizedBlock, ~] = dctQuantizeAndEncode(bestResidualBlockSplit(:, :, splitIndex), smallBlockQP, splitSize);
-        totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlock);
-    end
-    
-    % for MVs
-    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(bestMVNonSplit)));
-    % note we need to transpose bestMVSplit first before reshaping to get
-    % row-wise reshaping
-    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(bestMVSplit', 1, []))));
-    
-    JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
-    Jsplit = SADSplit + Lambda * totalBitsSplit;
-    
-    if Jsplit < JNonSplit
-        split = true;
-        bestMV = bestMVSplit;
-        referenceBlock = bestReferenceBlockSplit;
-        residualBlock = bestResidualBlockSplit;
-    else
-        split = false;
-        bestMV = bestMVNonSplit;
-        referenceBlock = bestReferenceBlockNonSplit;
-        residualBlock = bestResidualBlockNonSplit;
-    end
-end
-end
-
-function [bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit] = ...
-                getSplitMVByIndex(splitIndex, bestMAESplit, bestMVSplit, bestReferenceBlockSplit, bestResidualBlockSplit, ...
-                                  indexRefFrame, refFrame, splitBlock, splitSize, splitWidthPixelIndex, splitHeightPixelIndex, r)
-    [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(indexRefFrame, refFrame, splitBlock, splitSize, splitWidthPixelIndex, splitHeightPixelIndex, r);
-    if MAEFrame < bestMAESplit(1, splitIndex)
-        bestMAESplit(1, splitIndex) = MAEFrame;
-        bestMVSplit(splitIndex, :) = MVFrame;
-        bestReferenceBlockSplit(:, :, splitIndex) = refBlockFrame;
-        bestResidualBlockSplit(:, :, splitIndex) = residualBlockFrame;
-    end
 end
 
 function [MAEFrame, MVFrame, refBlockFrame, residualBlockFrame] = getBestMVInRefFrame(indexRefFrame, refFrame, currentBlock, blockSize, widthPixelIndex, heightPixelIndex, r)

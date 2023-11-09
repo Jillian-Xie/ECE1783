@@ -1,4 +1,4 @@
-function [bestMV, referenceBlock, residualBlock] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP)
+function [bestMV, bestMAE, referenceBlock, residualBlock] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP)
 
 bestMAE = Inf;
 bestMV = int32([0, 0, 0]);
