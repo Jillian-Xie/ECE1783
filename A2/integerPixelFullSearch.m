@@ -1,6 +1,5 @@
 function [split, bestMV, referenceBlock, residualBlock] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r, VBSEnable, QP)
 
-split = false;
 bestMAENonSplit = Inf;
 bestMVNonSplit = int32([0, 0, 0]);
 
@@ -88,8 +87,10 @@ else
     end
     
     % for MVs
-    totalBitsNonSplit = totalBitsNonSplit + 3;
-    totalBitsSplit = totalBitsSplit + 12;
+    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(bestMVNonSplit)));
+    % note we need to transpose bestMVSplit first before reshaping to get
+    % row-wise reshaping
+    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(bestMVSplit', 1, []))));
     
     JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
     Jsplit = SADSplit + Lambda * totalBitsSplit;
