@@ -17,10 +17,13 @@ heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 QTCCoeffs = strings([nFrame, widthBlockNum * heightBlockNum]);
 MDiffs = strings([nFrame, 1]);
 
+% https://ieeexplore.ieee.org/document/1626308
+Lambda = 0.85 * (2 ^ ((QP-12) / 3));
+
 for currentFrameNum = 1:nFrame
     if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
         % First frame needs to be I frame
-        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, FMEEnable, FastME);
+        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, FMEEnable, FastME, Lambda);
         QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         % Update reconstructed Y-only frames with reconstructed frame
@@ -28,7 +31,7 @@ for currentFrameNum = 1:nFrame
         % Update reference frame with reconstructed frame
         referenceFrames = reconstructedFrame;
     else
-        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME);
+        [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda);
         QTCCoeffs(currentFrameNum, :) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         % Update reconstructed Y-only frames with reconstructed frame

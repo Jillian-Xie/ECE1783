@@ -1,4 +1,4 @@
-function [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(refFrames, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, VBSEnable, FMEEnable, FastME, MVP)
+function [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(refFrames, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, VBSEnable, FMEEnable, FastME, MVP, Lambda)
 
 % return values: 
 %     split: boolean indicating whether we split this block 
@@ -12,8 +12,7 @@ widthPixelIndex = int32((int32(widthBlockIndex)-1)*blockSize + 1);
 heightPixelIndex = int32((int32(heightBlockIndex)-1)*blockSize + 1);
 splitSize = blockSize / 2;
 numRefFrames = size(refFrames,3);
-% https://ieeexplore.ieee.org/document/1626308
-Lambda = 0.85 * (2 ^ ((QP-12) / 3));
+
 bestMAESplit = Inf(1, 4);
 bestMVSplit = int32(zeros(4,3));
 referenceBlockSplit = zeros(splitSize, splitSize, 4);

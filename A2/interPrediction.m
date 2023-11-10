@@ -1,4 +1,4 @@
-function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrames, currentFrame, blockSize, r, QP, VBSEnable, FMEEnable, FastME)
+function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = interPrediction(referenceFrames, currentFrame, blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda)
 
 height = size(referenceFrames,1);
 width  = size(referenceFrames,2);
@@ -16,7 +16,7 @@ for heightBlockIndex = 1:heightBlockNum
     previousMV = int32([0, 0, 0]);
     for widthBlockIndex = 1:widthBlockNum
         
-        [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(referenceFrames, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize, QP, VBSEnable, FMEEnable, FastME, previousMV);
+        [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(referenceFrames, currentFrame, widthBlockIndex, heightBlockIndex, r,blockSize, QP, VBSEnable, FMEEnable, FastME, previousMV, Lambda);
 
         QTCCoeffsFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) = encodedQuantizedBlock;
         

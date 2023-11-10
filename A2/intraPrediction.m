@@ -1,4 +1,4 @@
-function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP, VBSEnable, FMEEnable, FastME)
+function [QTCCoeffsFrame, MDiffsFrame, reconstructedFrame] = intraPrediction(currentFrame, blockSize,QP, VBSEnable, FMEEnable, FastME, Lambda)
 
 height = size(currentFrame,1);
 width  = size(currentFrame,2);
@@ -8,7 +8,6 @@ heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
 modes = zeros(heightBlockNum, widthBlockNum);
 reconstructedFrame(1:height,1:width) = uint8(128);
-approximatedResidualFrame = uint8(zeros(height, width));
 
 QTCCoeffsFrame = strings([1, widthBlockNum * heightBlockNum]);
 MDiffsInt = [];
@@ -21,7 +20,7 @@ for heightBlockIndex = 1:heightBlockNum
         
         % the left-𝑖 (or top-𝑖) border reconstructed samples
         [verticalRefernce, horizontalReference] = getIntraPredictionReference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
-        [mode, encodedQuantizedBlock, approximatedResidualBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize,QP);
+        [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize, QP, VBSEnable, FMEEnable, FastME, Lambda);
         
         QTCCoeffsFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) = encodedQuantizedBlock;
         
@@ -30,7 +29,6 @@ for heightBlockIndex = 1:heightBlockNum
         previousMode = mode;
         
         modes(heightBlockIndex, widthBlockIndex) = mode;
-        approximatedResidualFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = approximatedResidualBlock;
         
         reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
     end
