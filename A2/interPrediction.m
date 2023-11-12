@@ -11,7 +11,7 @@ heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
 reconstructedFrame = uint8(zeros(height, width));
 
-QTCCoeffsFrame = strings([1, widthBlockNum * heightBlockNum]);
+QTCCoeffsFrame = strings(0);
 MDiffsInt = [];
 splitInt = [];
 

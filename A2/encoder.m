@@ -53,6 +53,11 @@ for currentFrameNum = 1:nFrame
     fid = createOrClearFile(YOnlyFilePath);
     fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
     fclose(fid);
+        
+    YOnlyFilePath = [EncoderReconstructOutputPath, sprintf('%04d',currentFrameNum), '.csv'];
+    fid = createOrClearFile(YOnlyFilePath);
+    writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
+    fclose(fid);
 end
 
 % Store data in binary format

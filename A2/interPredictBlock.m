@@ -136,3 +136,5 @@ else
         reconstructedBlock = int32(approximatedResidualBlock) + int32(referenceBlockNonSplit);
     end
 end
+
+end

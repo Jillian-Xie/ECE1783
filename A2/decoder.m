@@ -207,6 +207,11 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
         fid = createOrClearFile(YOnlyFilePath);
         fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
         fclose(fid);
+        
+        YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.csv'];
+        fid = createOrClearFile(YOnlyFilePath);
+        writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
+        fclose(fid);
     end
 end
 

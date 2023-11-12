@@ -2,7 +2,7 @@ clc; clear; close all;
 
 % config info
 yuvInputFileName = 'synthetic.yuv';
-nFrame = 4;
+nFrame = 10;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 8;
@@ -10,7 +10,7 @@ r = 2;
 QP = 0;
 I_Period = 3;
 
-nRefFrames = 2;
+nRefFrames = 1;
 VBSEnable = false;
 FMEEnable = false;
 FastME = false;
