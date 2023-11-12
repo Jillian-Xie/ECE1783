@@ -3,9 +3,9 @@ function [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredict
 % return values: 
 %     split: boolean indicating whether we split this block 
 %     mode: when split==false, mode is an integer. When split==true,
-%         mode is a matrix of integers of shape 2*2
+%         mode is a matrix of integers of shape 1*4
 %     encodedQuantizedBlock: when split==false, encodedQuantizedBlock is a string array. When split==true,
-%         encodedQuantizedBlock is matrix of string array of shape 2*2
+%         encodedQuantizedBlock is matrix of string array of shape 1*4
 %     reconstructedBlock: of shape blockSize * blockSize
 
 VPredictionBlockNonSplit = zeros(blockSize, blockSize);
@@ -18,7 +18,7 @@ VPredictionBlockSplit = zeros(splitSize, splitSize, 4);
 HPredictionBlockSplit = zeros(splitSize, splitSize, 4);
 predictedBlockSplit = zeros(splitSize, splitSize, 4);
 residualBlockSplit = zeros(splitSize, splitSize, 4);
-modesSplit = zeros(2,2);
+modesSplit = zeros(1,4);
 reconstructedBlock = int32(zeros(blockSize, blockSize));
             
 for i=1:blockSize
@@ -55,7 +55,7 @@ else
     topLeftSplit = currentBlock(1:splitSize, 1:splitSize);
     for i = 1:splitSize
         HPredictionBlockSplit(:, i, 1) = horizontalReference(1:splitSize, 1);
-        VPredictionBlockSplit(i, :, 1) = verticalReference(1, 1:splitSize);
+        VPredictionBlockSplit(i, :, 1) = verticalReference(1, 1:splitSize); 
     end
     SAD_h=abs(sum(int32(HPredictionBlockSplit(:, :, 1)),'all') - sum(int32(topLeftSplit),'all'));
     SAD_v=abs(sum(int32(VPredictionBlockSplit(:, :, 1)),'all') - sum(int32(topLeftSplit),'all'));
@@ -74,8 +74,8 @@ else
     % top right
     topRightSplit = currentBlock(1:splitSize, splitSize+1:2*splitSize);
     for i = 1:splitSize
-        HPredictionBlockSplit(:, i, 2) = horizontalReference(splitSize+1:2*splitSize, 1);
-        VPredictionBlockSplit(i, :, 2) = predictedBlockSplit(:, splitSize, 1); % right-most column of the previous block
+        HPredictionBlockSplit(:, i, 2) = predictedBlockSplit(:, splitSize, 1); % right-most column of the previous block
+        VPredictionBlockSplit(i, :, 2) = verticalReference(1, splitSize+1:2*splitSize); 
     end
     SAD_h=abs(sum(int32(HPredictionBlockSplit(:, :, 2)),'all') - sum(int32(topRightSplit),'all'));
     SAD_v=abs(sum(int32(VPredictionBlockSplit(:, :, 2)),'all') - sum(int32(topRightSplit),'all'));
@@ -94,19 +94,19 @@ else
     % bottom left
     bottomLeftSplit = currentBlock(splitSize+1:2*splitSize, 1:splitSize);
     for i = 1:splitSize
-        HPredictionBlockSplit(:, i, 3) = predictedBlockSplit(splitSize, :, 1); % bottom-most column of the top block
-        VPredictionBlockSplit(i, :, 3) = verticalReference(1, 1:splitSize); 
+        HPredictionBlockSplit(:, i, 3) = horizontalReference(splitSize+1:2*splitSize, 1);
+        VPredictionBlockSplit(i, :, 3) = predictedBlockSplit(splitSize, :, 1); % bottom-most column of the top block
     end
     SAD_h=abs(sum(int32(HPredictionBlockSplit(:, :, 3)),'all') - sum(int32(bottomLeftSplit),'all'));
     SAD_v=abs(sum(int32(VPredictionBlockSplit(:, :, 3)),'all') - sum(int32(bottomLeftSplit),'all'));
     if(SAD_h > SAD_v) % decide mode by SAD
         SADBottomLeft = SAD_v;
-        modesSplit(2,1) = int32(0);
+        modesSplit(1,3) = int32(0);
         predictedBlockSplit(:, :, 3) = HPredictionBlockSplit(:, :, 3);
         residualBlockSplit(:, :, 3) = int32(bottomLeftSplit) - int32(predictedBlockSplit(:, :, 3));
     else
         SADBottomLeft = SAD_h;
-        modesSplit(2,1) = int32(1);
+        modesSplit(1,3) = int32(1);
         predictedBlockSplit(:, :, 3) = VPredictionBlockSplit(:, :, 3);
         residualBlockSplit(:, :, 3) = int32(bottomLeftSplit) - int32(predictedBlockSplit(:, :, 3));
     end
@@ -114,19 +114,19 @@ else
     % bottom right
     bottomRightSplit = currentBlock(splitSize+1:2*splitSize, splitSize+1:2*splitSize);
     for i = 1:splitSize
-        HPredictionBlockSplit(:, i, 4) = predictedBlockSplit(splitSize, :, 2); % bottom-most column of the top block
-        VPredictionBlockSplit(i, :, 4) = predictedBlockSplit(:, splitSize, 3); 
+        HPredictionBlockSplit(:, i, 4) = predictedBlockSplit(:, splitSize, 3); 
+        VPredictionBlockSplit(i, :, 4) = predictedBlockSplit(splitSize, :, 2); % bottom-most column of the top block
     end
     SAD_h=abs(sum(int32(HPredictionBlockSplit(:, :, 4)),'all') - sum(int32(bottomRightSplit),'all'));
     SAD_v=abs(sum(int32(VPredictionBlockSplit(:, :, 4)),'all') - sum(int32(bottomRightSplit),'all'));
     if(SAD_h > SAD_v) % decide mode by SAD
         SADBottomRight = SAD_v;
-        modesSplit(2,2) = int32(0);
+        modesSplit(1,4) = int32(0);
         predictedBlockSplit(:, :, 4) = HPredictionBlockSplit(:, :, 4);
         residualBlockSplit(:, :, 4) = int32(bottomRightSplit) - int32(predictedBlockSplit(:, :, 4));
     else
         SADBottomRight = SAD_h;
-        modesSplit(2,2) = int32(1);
+        modesSplit(1,4) = int32(1);
         predictedBlockSplit(:, :, 4) = VPredictionBlockSplit(:, :, 4);
         residualBlockSplit(:, :, 4) = int32(bottomRightSplit) - int32(predictedBlockSplit(:, :, 4));
     end
@@ -156,7 +156,7 @@ else
     % note we need to transpose modesSplit first before reshaping to get
     % row-wise reshaping
     % reshape([1,2,3; 4,5,6]', 1, []) = [1 2 3 4 5 6]
-    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(modesSplit', 1, []))));
+    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(modesSplit)));
     
     JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
     Jsplit = SADSplit + Lambda * totalBitsSplit;

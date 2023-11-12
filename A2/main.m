@@ -13,7 +13,7 @@ I_Period = 3;
 nRefFrames = 2;
 VBSEnable = false;
 FMEEnable = false;
-FastME = true;
+FastME = false;
 
 % encoder
 tic
@@ -22,8 +22,9 @@ toc
 
 load('QTCCoeffs.mat', 'QTCCoeffs');
 load('MDiffs.mat', 'MDiffs');
+load('splits.mat', 'splits');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs);
+decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits);
 toc

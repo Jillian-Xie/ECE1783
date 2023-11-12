@@ -5,7 +5,7 @@ function [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredi
 %     bestMV: when split==false, bestMV is of shape 1*3. When split==true,
 %         bestMV is of shape 4*3
 %     encodedQuantizedBlock: when split==false, encodedQuantizedBlock is a string array. When split==true,
-%         encodedQuantizedBlock is matrix of string array of shape 2*2
+%         encodedQuantizedBlock is matrix of string array of shape 1*4
 %     reconstructedBlock: of shape blockSize * blockSize
 
 widthPixelIndex = int32((int32(widthBlockIndex)-1)*blockSize + 1);
@@ -109,11 +109,8 @@ else
     if Jsplit < JNonSplit
         split = true;
         bestMV = bestMVSplit;
-        % the transpose here is important
-        % reshape([1,2,3,4], 2, ,2)' = 
-        % 1   2
-        % 3   4
-        encodedQuantizedBlock = reshape(encodedQuantizedBlockSplit, 2, 2)';
+        
+        encodedQuantizedBlock = encodedQuantizedBlockSplit;
         
         rescaledBlock = rescaling(quantizedBlockSplit(:, :, 1), smallBlockQP);
         approximatedResidualBlock = idct2(rescaledBlock);
