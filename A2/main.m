@@ -10,14 +10,14 @@ r = 2;
 QP = 0;
 I_Period = 3;
 
-nRefFrames = 1;
-VBSEnable = false;
+nRefFrames = 2;
+VBSEnable = true;
 FMEEnable = false;
 FastME = false;
 
 % encoder
 tic
-encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME)
+reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME);
 toc
 
 load('QTCCoeffs.mat', 'QTCCoeffs');
@@ -26,5 +26,5 @@ load('splits.mat', 'splits');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits);
+decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, reconstructedY);
 toc

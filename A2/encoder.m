@@ -1,4 +1,4 @@
-function encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME)
+function reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME)
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 
@@ -6,10 +6,10 @@ function encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Pe
 paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
 
 % the reference frame for intra- or inter-frame prediction
-referenceFrames(1:size(paddingY,1),1:size(paddingY,2),1) = uint8(128); 
+referenceFrames(1:size(paddingY,1),1:size(paddingY,2),1) = int32(128); 
 
 % Reconstructed Y-only frames (with padding)
-reconsructedY(1:size(paddingY,1),1:size(paddingY,2),1:nFrame) = paddingY;
+reconstructedY(1:size(paddingY,1),1:size(paddingY,2),1:nFrame) = paddingY;
 
 widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
 heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
@@ -34,7 +34,7 @@ for currentFrameNum = 1:nFrame
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
         % Update reconstructed Y-only frames with reconstructed frame
-        reconsructedY(:, :, currentFrameNum) = reconstructedFrame;
+        reconstructedY(:, :, currentFrameNum) = reconstructedFrame;
         % Update reference frame with reconstructed frame
         referenceFrames = reconstructedFrame;
     else
@@ -43,9 +43,9 @@ for currentFrameNum = 1:nFrame
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
         % Update reconstructed Y-only frames with reconstructed frame
-        reconsructedY(:, :, currentFrameNum) = reconstructedFrame;
+        reconstructedY(:, :, currentFrameNum) = reconstructedFrame;
         % Update reference frame with reconstructed Y-only frames
-        referenceFrames = updateRefFrames(reconsructedY, nRefFrames, currentFrameNum, I_Period);
+        referenceFrames = updateRefFrames(reconstructedY, nRefFrames, currentFrameNum, I_Period);
     end
     
     % get YOnly vedio

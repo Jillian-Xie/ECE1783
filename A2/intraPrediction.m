@@ -9,7 +9,7 @@ width  = size(currentFrame,2);
 widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
 heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
-reconstructedFrame(1:height,1:width) = uint8(128);
+reconstructedFrame(1:height,1:width) = int32(128);
 
 QTCCoeffsFrame = strings(0);
 MDiffsInt = [];

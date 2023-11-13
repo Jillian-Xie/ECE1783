@@ -1,4 +1,4 @@
-function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits)
+function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, encoderReconstructedY)
     DecoderOutputPath = 'DecoderOutput\';
     reconstructedY = zeros(height, width, nFrame);
     
@@ -31,7 +31,9 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
             numNonSplitted = widthBlockNum * heightBlockNum;
         end
         
-        reconstructedFrame(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = uint8(128);
+        reconstructedFrame(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+        
+        encoderReferenceFrame = encoderReconstructedY(:, :, currentFrameNum);
             
         if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
             % I frame
@@ -56,13 +58,18 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         previousMode = mode;
 
                         if mode == 0
-                            % horizontal
-                            thisBlock = int32(approximatedResidualBlock) + int32(horizontalReference);
-                        else
                             % vertical
                             thisBlock = int32(approximatedResidualBlock) + int32(verticalReference);
+                        else
+                            % horizontal
+                            thisBlock = int32(approximatedResidualBlock) + int32(horizontalReference);
                         end
                         reconstructedFrame(top : bottom, left : right) = thisBlock;
+                        
+                        encoderReference = encoderReferenceFrame(top : bottom, left : right);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
 
                         subBlockIndex = subBlockIndex + 1;
                     else
@@ -72,10 +79,10 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         approximatedResidualBlockBottomLeft = decodeQTCCoeff(QTCCoeff, subBlockIndex + 2, splitSize, smallBlockQP);
                         approximatedResidualBlockBottomRight = decodeQTCCoeff(QTCCoeff, subBlockIndex + 3, splitSize, smallBlockQP);
                         
-                        notSameModeTopLeft = MDiffRLEDecoded(1, subBlockIndex + 1); % 0 = no change, 1 = changed
-                        notSameModeTopRight = MDiffRLEDecoded(1, subBlockIndex + 2); % 0 = no change, 1 = changed
-                        notSameModeBottomLeft = MDiffRLEDecoded(1, subBlockIndex + 3); % 0 = no change, 1 = changed
-                        notSameModeBottomRight = MDiffRLEDecoded(1, subBlockIndex + 4); % 0 = no change, 1 = changed
+                        notSameModeTopLeft = MDiffRLEDecoded(1, subBlockIndex); % 0 = no change, 1 = changed
+                        notSameModeTopRight = MDiffRLEDecoded(1, subBlockIndex + 1); % 0 = no change, 1 = changed
+                        notSameModeBottomLeft = MDiffRLEDecoded(1, subBlockIndex + 2); % 0 = no change, 1 = changed
+                        notSameModeBottomRight = MDiffRLEDecoded(1, subBlockIndex + 3); % 0 = no change, 1 = changed
                         
                         modeTopLeft = xor(previousMode, notSameModeTopLeft);
                         modeTopRight = xor(modeTopLeft, notSameModeTopRight);
@@ -85,43 +92,63 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         
                         % top left
                         if modeTopLeft == 0
-                            % horizontal
-                            thisBlock = int32(approximatedResidualBlockTopLeft) + int32(horizontalReference(1:splitSize, 1));
-                        else
                             % vertical
                             thisBlock = int32(approximatedResidualBlockTopLeft) + int32(verticalReference(1, 1:splitSize));
+                        else
+                            % horizontal
+                            thisBlock = int32(approximatedResidualBlockTopLeft) + int32(horizontalReference(1:splitSize, 1));
                         end
                         reconstructedFrame(top : top + splitSize - 1, left : left + splitSize - 1) = thisBlock;
                         
+                        encoderReference = encoderReferenceFrame(top : top + splitSize - 1, left : left + splitSize - 1);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
+                        
                         % top right
                         if modeTopRight == 0
-                            % horizontal
-                            thisBlock = int32(approximatedResidualBlockTopRight) + int32(reconstructedFrame(top : top + splitSize - 1, left + splitSize - 1));
-                        else
                             % vertical
                             thisBlock = int32(approximatedResidualBlockTopRight) + int32(verticalReference(1, splitSize+1:2*splitSize));
+                        else
+                            % horizontal
+                            thisBlock = int32(approximatedResidualBlockTopRight) + int32(reconstructedFrame(top : top + splitSize - 1, left + splitSize - 1));
                         end
                         reconstructedFrame(top : top + splitSize - 1, left + splitSize : right) = thisBlock;
                         
+                        encoderReference = encoderReferenceFrame(top : top + splitSize - 1, left + splitSize : right);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
+                        
                         % bottom left
                         if modeBottomLeft == 0
-                            % horizontal
-                            thisBlock = int32(approximatedResidualBlockBottomLeft) + int32(horizontalReference(splitSize+1:2*splitSize, 1));
-                        else
                             % vertical
                             thisBlock = int32(approximatedResidualBlockBottomLeft) + int32(reconstructedFrame(top + splitSize - 1, left : left + splitSize - 1));
+                        else
+                            % horizontal
+                            thisBlock = int32(approximatedResidualBlockBottomLeft) + int32(horizontalReference(splitSize+1:2*splitSize, 1));
                         end
                         reconstructedFrame(top + splitSize : bottom, left : left + splitSize - 1) = thisBlock;
                         
+                        encoderReference = encoderReferenceFrame(top + splitSize : bottom, left : left + splitSize - 1);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
+                        
                         % bottom right
                         if modeBottomRight == 0
-                            % horizontal
-                            thisBlock = int32(approximatedResidualBlockBottomRight) + int32(reconstructedFrame(top + splitSize : bottom, left + splitSize - 1));
-                        else
                             % vertical
                             thisBlock = int32(approximatedResidualBlockBottomRight) + int32(reconstructedFrame(top + splitSize - 1, left + splitSize : right));
+                        else
+                            % horizontal
+                            thisBlock = int32(approximatedResidualBlockBottomRight) + int32(reconstructedFrame(top + splitSize : bottom, left + splitSize - 1));
                         end
                         reconstructedFrame(top + splitSize : bottom, left + splitSize : right) = thisBlock;
+                        
+                        encoderReference = encoderReferenceFrame(top + splitSize : bottom, left + splitSize : right);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
                         
                         subBlockIndex = subBlockIndex + 4;
                     end
@@ -151,6 +178,11 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
                         reconstructedFrame(top : bottom, left : right) = thisBlock;
 
+                        encoderReference = encoderReferenceFrame(top : bottom, left : right);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
+
                         subBlockIndex = subBlockIndex + 1;
                     else
                         % this block is splitted
@@ -179,21 +211,41 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         thisBlock = int32(approximatedResidualBlockTopLeft) + ...
                             int32(refFrameTopLeft(top + MVTopLeft(1,1) : top + splitSize - 1 + MVTopLeft(1,1), left + MVTopLeft(1,2) : left + splitSize - 1 + MVTopLeft(1,2)));
                         reconstructedFrame(top : top + splitSize - 1, left : left + splitSize - 1) = thisBlock;
+
+                        encoderReference = encoderReferenceFrame(top : top + splitSize - 1, left : left + splitSize - 1);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
                         
                         % top right                        
                         thisBlock = int32(approximatedResidualBlockTopRight) + ...
                             int32(refFrameTopRight(top + MVTopRight(1,1) : top + splitSize - 1 + MVTopRight(1,1), left + splitSize + MVTopRight(1,2) : right + MVTopRight(1,2)));
                         reconstructedFrame(top : top + splitSize - 1, left + splitSize : right) = thisBlock;
+
+                        encoderReference = encoderReferenceFrame(top : top + splitSize - 1, left + splitSize : right);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
                         
                         % bottom left
                         thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
                             int32(refFrameBottomLeft(top + splitSize + MVBottomLeft(1,1) : bottom + MVBottomLeft(1,1), left + MVBottomLeft(1,2) : left + splitSize - 1 + MVBottomLeft(1,2)));
                         reconstructedFrame(top + splitSize : bottom, left : left + splitSize - 1) = thisBlock;
+
+                        encoderReference = encoderReferenceFrame(top + splitSize : bottom, left : left + splitSize - 1);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
                         
                         % bottom right
                         thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(top + splitSize + MVBottomRight(1,1) : bottom + MVBottomRight(1,1), left + splitSize + MVBottomRight(1,2) : right + MVBottomRight(1,2)));
                         reconstructedFrame(top + splitSize : bottom, left + splitSize : right) = thisBlock;
+
+                        encoderReference = encoderReferenceFrame(top + splitSize : bottom, left + splitSize : right);
+                        if isequal(thisBlock, encoderReference) == false
+                            disp("bad!");
+                        end
                         
                         subBlockIndex = subBlockIndex + 4;
                     end
