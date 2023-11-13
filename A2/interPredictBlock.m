@@ -75,7 +75,7 @@ else
     end
     
     SADNonSplit = bestMAENonSplit * blockSize * blockSize;
-    SADSplit = sum(bestMAESplit(1, 1:numRefFrames), "all") * splitSize * splitSize;
+    SADSplit = sum(bestMAESplit, "all") * splitSize * splitSize;
     
     totalBitsNonSplit = 0;
     totalBitsSplit = 0;

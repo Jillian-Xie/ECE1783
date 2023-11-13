@@ -5,15 +5,17 @@ yuvInputFileName = 'synthetic.yuv';
 nFrame = 10;
 width  = uint32(352);
 height = uint32(288);
-blockSize = 8;
+blockSize = 16;
 r = 2;
-QP = 0;
+QP = 4;
 I_Period = 3;
 
 nRefFrames = 2;
 VBSEnable = true;
 FMEEnable = false;
 FastME = false;
+
+visualizeVBS = VBSEnable && true;
 
 % encoder
 tic
@@ -26,5 +28,5 @@ load('splits.mat', 'splits');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, reconstructedY);
+decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
 toc

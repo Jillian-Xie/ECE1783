@@ -1,4 +1,4 @@
-function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, encoderReconstructedY)
+function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, encoderReconstructedY)
     DecoderOutputPath = 'DecoderOutput\';
     reconstructedY = zeros(height, width, nFrame);
     
@@ -265,6 +265,11 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
         writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
         fclose(fid);
     end
+    
+    if visualizeVBS
+        reconstructedY = addFramesToVisualizeVBS(reconstructedY, nFrame, width, height, blockSize, splits);
+    end
+    plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath);
 end
 
 function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, QP)
@@ -275,7 +280,6 @@ function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blo
     rescaledBlock = rescaling(quantizedBlock, QP);
     approximatedResidualBlock = idct2(rescaledBlock);
 end
-
 
 function [numSplitted, numNonSplitted] = countSplitted(splitRLEDecoded, widthBlockNum, heightBlockNum)
     numSplitted = 0;
@@ -289,5 +293,61 @@ function [numSplitted, numNonSplitted] = countSplitted(splitRLEDecoded, widthBlo
                 numNonSplitted = numNonSplitted + 1;
             end
         end
+    end
+end
+
+function reconstructedY = addFramesToVisualizeVBS(reconstructedY, nFrame, width, height, blockSize, splits)
+    widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
+    heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
+    splitSize = blockSize / 2;
+    
+    for currentFrameNum = 1:nFrame
+        splitSequence = splits(currentFrameNum, 1);
+        splitFrame = expGolombDecoding(convertStringsToChars(splitSequence));
+        splitRLEDecoded = reverseRLE(splitFrame, widthBlockNum * heightBlockNum);
+        for heightBlockIndex = 1:heightBlockNum
+            for widthBlockIndex = 1:widthBlockNum
+                top = int32((heightBlockIndex-1)*blockSize + 1);
+                bottom = int32(heightBlockIndex * blockSize);
+                left = int32((widthBlockIndex-1) * blockSize + 1);
+                right = int32(widthBlockIndex * blockSize);
+
+                if splitRLEDecoded(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex)
+                    reconstructedY(top : top + splitSize - 1, left : left + splitSize - 1, currentFrameNum) = addFrame(reconstructedY(top : top + splitSize - 1, left : left + splitSize - 1, currentFrameNum), heightBlockIndex == 1, widthBlockIndex == 1);
+                    reconstructedY(top : top + splitSize - 1, left + splitSize : right, currentFrameNum) = addFrame(reconstructedY(top : top + splitSize - 1, left + splitSize : right, currentFrameNum), heightBlockIndex == 1, false);
+                    reconstructedY(top + splitSize : bottom, left : left + splitSize - 1, currentFrameNum) = addFrame(reconstructedY(top + splitSize : bottom, left : left + splitSize - 1, currentFrameNum), false, widthBlockIndex == 1);
+                    reconstructedY(top + splitSize : bottom, left + splitSize : right, currentFrameNum) = addFrame(reconstructedY(top + splitSize : bottom, left + splitSize : right, currentFrameNum), false, false);
+                else
+                    reconstructedY(top : bottom, left : right, currentFrameNum) = addFrame(reconstructedY(top : bottom, left : right, currentFrameNum), heightBlockIndex == 1, widthBlockIndex == 1);
+                end
+            end
+        end
+    end
+end
+
+function block = addFrame(block, addTop, addLeft)
+    height = size(block, 1);
+    width = size(block, 2);
+    
+    if addLeft
+        block(1:height, 1) = 0;
+    end
+    
+    block(1:height, width) = 0;
+    if addTop
+        block(1, 1:width) = 0;
+    end
+    block(height, 1:width) = 0;
+end
+
+function plotRGB(Y, nFrame, rgbOutputPath)
+    R = Y;
+    G = Y;
+    B = Y;
+    for i=1:nFrame
+        im(:,:,1)=R(:,:,i);
+        im(:,:,2)=G(:,:,i);
+        im(:,:,3)=B(:,:,i);
+        imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
     end
 end
