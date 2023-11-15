@@ -174,7 +174,14 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         MVDiff = MDiffRLEDecoded(1, subBlockIndex * 3 - 2 : subBlockIndex * 3);
                         MV = int32(previousMV) + int32(MVDiff);
                         previousMV = MV;
-                        refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
+
+                        if FMEEnable
+                            refFrame = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MV(1,3)), blockSize);
+                            MV = MV * 2;
+                        else
+                            refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
+                        end
+
                         thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
                         reconstructedFrame(top : bottom, left : right) = thisBlock;
 
@@ -264,6 +271,7 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
         fid = createOrClearFile(YOnlyFilePath);
         writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
         fclose(fid);
+    save('reconstructedY.mat', 'reconstructedY');
     end
     
     if visualizeVBS

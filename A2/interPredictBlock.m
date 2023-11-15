@@ -19,8 +19,19 @@ referenceBlockSplit = zeros(splitSize, splitSize, 4);
 residualBlockSplit = zeros(splitSize, splitSize, 4);
 reconstructedBlock = int32(zeros(blockSize, blockSize));
 
+% FME - Interpolate reference frames if FME is enabled
+if FMEEnable
+    interpolatedRefFrames = interpolateFrames(refFrames, blockSize);
+else
+    interpolatedRefFrames = refFrames;
+end
+
 if FastME == false
+    if FMEEnable
+        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fractionalPixelFullSearch(interpolatedRefFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
+    else
     [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
+    end
 else
     [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
 end
