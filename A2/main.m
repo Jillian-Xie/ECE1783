@@ -11,8 +11,8 @@ QP = 4;
 I_Period = 3;
 
 nRefFrames = 2;
-VBSEnable = true;
-FMEEnable = false;
+VBSEnable = false;
+FMEEnable = true;
 FastME = false;
 
 visualizeVBS = VBSEnable && true;

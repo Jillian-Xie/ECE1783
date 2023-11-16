@@ -20,7 +20,7 @@ function [bestMV, bestMAE, referenceBlock, residualBlock] = fractionalPixelFullS
 
                     if mae < bestMAE
                         bestMAE = mae;
-                        bestMV = [mvY/2, mvX/2, indexRefFrame - 1]; % Storing the MV as fractional
+                        bestMV = [mvY, mvX, indexRefFrame - 1];
                         referenceBlock = refBlock;
                         residualBlock = int32(currentBlock) - int32(refBlock);
                     end
