@@ -21,7 +21,7 @@ reconstructedBlock = int32(zeros(blockSize, blockSize));
 
 % FME - Interpolate reference frames if FME is enabled
 if FMEEnable
-    interpolatedRefFrames = interpolateFrames(refFrames, blockSize);
+    interpolatedRefFrames = interpolateFrames(refFrames);
 else
     interpolatedRefFrames = refFrames;
 end

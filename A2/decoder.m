@@ -176,12 +176,13 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         previousMV = MV;
 
                         if FMEEnable
-                            refFrame = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MV(1,3)), blockSize);
+                            refFrame = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MV(1,3)));
+                            thisBlock = int32(approximatedResidualBlock) + int32(refFrame(2*top-1 + MV(1,1) :2: 2*top-1 + MV(1,1)+2*(blockSize-1), 2*left-1 + MV(1,2) :2: 2*left-1 + MV(1,2)+2*(blockSize-1)));
                         else
                             refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
+                            thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
                         end
 
-                        thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
                         reconstructedFrame(top : bottom, left : right) = thisBlock;
 
                         encoderReference = encoderReferenceFrame(top : bottom, left : right);
@@ -209,10 +210,10 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         previousMV = MVBottomRight;
                         
                         if FMEEnable
-                            refFrameTopLeft = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVTopLeft(1,3)),splitSize);
-                            refFrameTopRight = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVTopRight(1,3)),splitSize);
-                            refFrameBottomLeft = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVBottomLeft(1,3)),splitSize);
-                            refFrameBottomRight = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVBottomRight(1,3)),splitSize);
+                            refFrameTopLeft = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVTopLeft(1,3)));
+                            refFrameTopRight = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVTopRight(1,3)));
+                            refFrameBottomLeft = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVBottomLeft(1,3)));
+                            refFrameBottomRight = interpolateFrames(reconstructedY(:,:,currentFrameNum-1-MVBottomRight(1,3)));
                         else
                             refFrameTopLeft = reconstructedY(:,:,currentFrameNum-1-MVTopLeft(1,3));
                             refFrameTopRight = reconstructedY(:,:,currentFrameNum-1-MVTopRight(1,3));
@@ -221,8 +222,14 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         end
 
                         % top left
-                        thisBlock = int32(approximatedResidualBlockTopLeft) + ...
+                        if FMEEnable
+                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
+                            int32(refFrameTopLeft(2*top-1 + MVTopLeft(1,1) :2: 2*top-1 + MVTopLeft(1,1)+2*(splitSize-1), 2*left-1 + MVTopLeft(1,2) :2: 2*left-1 + MVTopLeft(1,2)+2*(splitSize-1)));
+                        else
+                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
                             int32(refFrameTopLeft(top + MVTopLeft(1,1) : top + splitSize - 1 + MVTopLeft(1,1), left + MVTopLeft(1,2) : left + splitSize - 1 + MVTopLeft(1,2)));
+                        end
+
                         reconstructedFrame(top : top + splitSize - 1, left : left + splitSize - 1) = thisBlock;
 
                         encoderReference = encoderReferenceFrame(top : top + splitSize - 1, left : left + splitSize - 1);
@@ -230,9 +237,16 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                             disp("bad!");
                         end
                         
-                        % top right                        
-                        thisBlock = int32(approximatedResidualBlockTopRight) + ...
+                        % top right
+
+                        if FMEEnable
+                            thisBlock = int32(approximatedResidualBlockTopRight) + ...
+                            int32(refFrameTopRight(2*top-1 + MVTopRight(1,1) :2: 2*top-1 + MVTopRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVTopRight(1,2) :2: 2*(left+splitSize)-1 + MVTopRight(1,2)+2*(splitSize-1)));
+                        else
+                            thisBlock = int32(approximatedResidualBlockTopRight) + ...
                             int32(refFrameTopRight(top + MVTopRight(1,1) : top + splitSize - 1 + MVTopRight(1,1), left + splitSize + MVTopRight(1,2) : right + MVTopRight(1,2)));
+                        end
+
                         reconstructedFrame(top : top + splitSize - 1, left + splitSize : right) = thisBlock;
 
                         encoderReference = encoderReferenceFrame(top : top + splitSize - 1, left + splitSize : right);
@@ -241,8 +255,15 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         end
                         
                         % bottom left
-                        thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
+
+                        if FMEEnable
+                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
+                            int32(refFrameTopLeft(2*(top+splitSize)-1 + MVBottomLeft(1,1) :2: 2*(top+splitSize)-1 + MVBottomLeft(1,1)+2*(splitSize-1), 2*left-1 + MVBottomLeft(1,2) :2: 2*left-1 + MVBottomLeft(1,2)+2*(splitSize-1)));
+                        else
+                            thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
                             int32(refFrameBottomLeft(top + splitSize + MVBottomLeft(1,1) : bottom + MVBottomLeft(1,1), left + MVBottomLeft(1,2) : left + splitSize - 1 + MVBottomLeft(1,2)));
+                        end
+
                         reconstructedFrame(top + splitSize : bottom, left : left + splitSize - 1) = thisBlock;
 
                         encoderReference = encoderReferenceFrame(top + splitSize : bottom, left : left + splitSize - 1);
@@ -251,8 +272,15 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         end
                         
                         % bottom right
-                        thisBlock = int32(approximatedResidualBlockBottomRight) + ...
+
+                        if FMEEnable
+                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
+                            int32(refFrameTopLeft(2*(top+splitSize)-1 + MVBottomRight(1,1) :2: 2*(top+splitSize)-1 + MVBottomRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVBottomRight(1,2) :2: 2*(left+splitSize)-1 + MVBottomRight(1,2)+2*(splitSize-1)));
+                        else
+                            thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(top + splitSize + MVBottomRight(1,1) : bottom + MVBottomRight(1,1), left + splitSize + MVBottomRight(1,2) : right + MVBottomRight(1,2)));
+                        end
+
                         reconstructedFrame(top + splitSize : bottom, left + splitSize : right) = thisBlock;
 
                         encoderReference = encoderReferenceFrame(top + splitSize : bottom, left + splitSize : right);
