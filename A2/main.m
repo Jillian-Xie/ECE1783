@@ -11,7 +11,7 @@ QP = 4;
 I_Period = 3;
 
 nRefFrames = 1;
-VBSEnable = false;
+VBSEnable = true;
 FMEEnable = true;
 FastME = false;
 

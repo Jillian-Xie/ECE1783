@@ -7,13 +7,9 @@ refBlockExample = [25, 28, 29;
 currentBlockExample = [40, 42;
                        50, 56];
 
-
-% Size of the block
-blockSize = 2;
-
 % Interpolate the reference block
-interpolatedRefBlock = interpolateFrames(refBlockExample, blockSize);
-disp(interpolatedRefBlock(1:4, 1:4, 1));
+interpolatedRefBlock = interpolateFrames(refBlockExample);
+disp(interpolatedRefBlock(1:5, 1:5, 1));
 
 % We need to define the starting pixel index for the current block
 % For simplicity, let's say it's the first pixel of the interpolated block

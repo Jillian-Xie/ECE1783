@@ -15,8 +15,6 @@ FMEEnable = true;
 FastME = false;
 visualizeVBS = VBSEnable && true;
 
-
-
 % Test with FME Disabled
 FMEEnable = false;
 runTest(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, visualizeVBS);

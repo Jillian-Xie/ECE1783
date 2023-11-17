@@ -224,7 +224,7 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         % top left
                         if FMEEnable
                             thisBlock = int32(approximatedResidualBlockTopLeft) + ...
-                            int32(refFrameTopLeft(2*top-1 + MVTopLeft(1,1) :2: 2*top-1 + MVTopLeft(1,1)+2*(splitSize-1), 2*left-1 + MVTopLeft(1,2) :2: 2*left-1 + MVTopLeft(1,2)+2*(splitSize-1)));
+                            int32(refFrameTopLeft(2*top-1 + MVTopLeft(1,1)*2 :2: 2*top-1 + MVTopLeft(1,1)*2+2*(splitSize-1), 2*left-1 + MVTopLeft(1,2)*2 :2: 2*left-1 + MVTopLeft(1,2)*2+2*(splitSize-1)));
                         else
                             thisBlock = int32(approximatedResidualBlockTopLeft) + ...
                             int32(refFrameTopLeft(top + MVTopLeft(1,1) : top + splitSize - 1 + MVTopLeft(1,1), left + MVTopLeft(1,2) : left + splitSize - 1 + MVTopLeft(1,2)));
@@ -241,7 +241,7 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
 
                         if FMEEnable
                             thisBlock = int32(approximatedResidualBlockTopRight) + ...
-                            int32(refFrameTopRight(2*top-1 + MVTopRight(1,1) :2: 2*top-1 + MVTopRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVTopRight(1,2) :2: 2*(left+splitSize)-1 + MVTopRight(1,2)+2*(splitSize-1)));
+                            int32(refFrameTopRight(2*top-1 + MVTopRight(1,1)*2 :2: 2*top-1 + MVTopRight(1,1)*2+2*(splitSize-1), 2*(left+splitSize)-1 + MVTopRight(1,2)*2 :2: 2*(left+splitSize)-1 + MVTopRight(1,2)*2+2*(splitSize-1)));
                         else
                             thisBlock = int32(approximatedResidualBlockTopRight) + ...
                             int32(refFrameTopRight(top + MVTopRight(1,1) : top + splitSize - 1 + MVTopRight(1,1), left + splitSize + MVTopRight(1,2) : right + MVTopRight(1,2)));
@@ -257,8 +257,8 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         % bottom left
 
                         if FMEEnable
-                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
-                            int32(refFrameTopLeft(2*(top+splitSize)-1 + MVBottomLeft(1,1) :2: 2*(top+splitSize)-1 + MVBottomLeft(1,1)+2*(splitSize-1), 2*left-1 + MVBottomLeft(1,2) :2: 2*left-1 + MVBottomLeft(1,2)+2*(splitSize-1)));
+                            thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
+                            int32(refFrameBottomLeft(2*(top+splitSize)-1 + MVBottomLeft(1,1)*2 :2: 2*(top+splitSize)-1 + MVBottomLeft(1,1)*2+2*(splitSize-1), 2*left-1 + MVBottomLeft(1,2)*2 :2: 2*left-1 + MVBottomLeft(1,2)*2+2*(splitSize-1)));
                         else
                             thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
                             int32(refFrameBottomLeft(top + splitSize + MVBottomLeft(1,1) : bottom + MVBottomLeft(1,1), left + MVBottomLeft(1,2) : left + splitSize - 1 + MVBottomLeft(1,2)));
@@ -274,8 +274,8 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
                         % bottom right
 
                         if FMEEnable
-                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
-                            int32(refFrameTopLeft(2*(top+splitSize)-1 + MVBottomRight(1,1) :2: 2*(top+splitSize)-1 + MVBottomRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVBottomRight(1,2) :2: 2*(left+splitSize)-1 + MVBottomRight(1,2)+2*(splitSize-1)));
+                            thisBlock = int32(approximatedResidualBlockBottomRight) + ...
+                            int32(refFrameBottomRight(2*(top+splitSize)-1 + MVBottomRight(1,1)*2 :2: 2*(top+splitSize)-1 + MVBottomRight(1,1)*2+2*(splitSize-1), 2*(left+splitSize)-1 + MVBottomRight(1,2)*2 :2: 2*(left+splitSize)-1 + MVBottomRight(1,2)*2+2*(splitSize-1)));
                         else
                             thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(top + splitSize + MVBottomRight(1,1) : bottom + MVBottomRight(1,1), left + splitSize + MVBottomRight(1,2) : right + MVBottomRight(1,2)));
