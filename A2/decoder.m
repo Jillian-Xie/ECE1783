@@ -1,4 +1,4 @@
-function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, encoderReconstructedY)
+function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, encoderReconstructedY)
     DecoderOutputPath = 'DecoderOutput\';
     reconstructedY = zeros(height, width, nFrame);
     
@@ -15,6 +15,8 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
         smallBlockQP = 0; 
     end
     
+    totalSplit = 0;
+    
     for currentFrameNum = 1:nFrame
         QTCCoeff = QTCCoeffs(currentFrameNum, :);
         MDiff = MDiffs(currentFrameNum, 1);
@@ -26,6 +28,8 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
             splitFrame = expGolombDecoding(convertStringsToChars(splitSequence));
             splitRLEDecoded = reverseRLE(splitFrame, widthBlockNum * heightBlockNum);
             [numSplitted, numNonSplitted] = countSplitted(splitRLEDecoded, widthBlockNum, heightBlockNum);
+            
+            totalSplit = totalSplit + numSplitted;
         else
             numSplitted = 0;
             numNonSplitted = widthBlockNum * heightBlockNum;
@@ -265,6 +269,8 @@ function decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEE
         writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
         fclose(fid);
     end
+    
+    splitPercentage = totalSplit / double((widthBlockNum * heightBlockNum * nFrame));
     
     if visualizeVBS
         reconstructedY = addFramesToVisualizeVBS(reconstructedY, nFrame, width, height, blockSize, splits);
