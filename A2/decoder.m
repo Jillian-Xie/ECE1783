@@ -8,6 +8,8 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
     
     widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
     heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
+
+    refFrameMatrix = zeros(heightBlockNum, widthBlockNum, nFrame);
     
     splitSize = blockSize / 2;
     smallBlockQP = QP - 1;
@@ -177,6 +179,9 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
 
                         MVDiff = MDiffRLEDecoded(1, subBlockIndex * 3 - 2 : subBlockIndex * 3);
                         MV = int32(previousMV) + int32(MVDiff);
+                        
+                        refFrameMatrix(heightBlockIndex, widthBlockIndex, currentFrameNum) = MV(3);
+                        
                         previousMV = MV;
                         refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
                         thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
@@ -259,15 +264,15 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
         reconstructedY(:,:,currentFrameNum) = reconstructedFrame;
 
         % get YOnly vedio
-        YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
-        fid = createOrClearFile(YOnlyFilePath);
-        fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
-        fclose(fid);
+        % YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
+        % fid = createOrClearFile(YOnlyFilePath);
+        % fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
+        % fclose(fid);
         
-        YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.csv'];
-        fid = createOrClearFile(YOnlyFilePath);
-        writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
-        fclose(fid);
+        % YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.csv'];
+        % fid = createOrClearFile(YOnlyFilePath);
+        % writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
+        % fclose(fid);
     end
     
     splitPercentage = totalSplit / double((widthBlockNum * heightBlockNum * nFrame));
@@ -275,7 +280,8 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
     if visualizeVBS
         reconstructedY = addFramesToVisualizeVBS(reconstructedY, nFrame, width, height, blockSize, splits);
     end
-    plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath);
+    plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath, refFrameMatrix, blockSize);
+    generateYOnlyVideo(uint8(reconstructedY(1:height, 1:width, :)), nFrame, ['DecoderOutput' filesep 'outputYUV.yuv']);
 end
 
 function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, QP)
@@ -346,14 +352,61 @@ function block = addFrame(block, addTop, addLeft)
     block(height, 1:width) = 0;
 end
 
-function plotRGB(Y, nFrame, rgbOutputPath)
+function plotRGB(Y, nFrame, rgbOutputPath, refFrameMatrix, blockSize)
+    height = size(Y,1);
+    width = size(Y,2);
     R = Y;
     G = Y;
     B = Y;
-    for i=1:nFrame
+
+    for i=1:nFrame        
         im(:,:,1)=R(:,:,i);
         im(:,:,2)=G(:,:,i);
         im(:,:,3)=B(:,:,i);
         imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
     end
+
+    if sum(refFrameMatrix,"all") > 0
+
+    widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
+    heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
+    
+    for currentFrameNum = 1:nFrame
+        for heightBlockIndex = 1:heightBlockNum
+            for widthBlockIndex = 1:widthBlockNum
+                top = int32((heightBlockIndex-1)*blockSize + 1);
+                bottom = int32(heightBlockIndex * blockSize);
+                left = int32((widthBlockIndex-1) * blockSize + 1);
+                right = int32(widthBlockIndex * blockSize);
+                if refFrameMatrix(heightBlockIndex, widthBlockIndex, currentFrameNum) == 1
+                    G(top:bottom, left:right, currentFrameNum) = 0;
+                    B(top:bottom, left:right, currentFrameNum) = 0;
+                elseif refFrameMatrix(heightBlockIndex, widthBlockIndex, currentFrameNum) == 2
+                    R(top:bottom, left:right, currentFrameNum) = 0;
+                    B(top:bottom, left:right, currentFrameNum) = 0;
+                elseif refFrameMatrix(heightBlockIndex, widthBlockIndex, currentFrameNum) == 3
+                    G(top:bottom, left:right, currentFrameNum) = 0;
+                    R(top:bottom, left:right, currentFrameNum) = 0;
+                end
+            end
+        end
+    end
+
+    for i=1:nFrame
+        nRefFramesOutputPath = rgbOutputPath + "nRefFrames_" + sprintf("%04d",i) + ".png";
+        im(:,:,1)=R(:,:,i);
+        im(:,:,2)=G(:,:,i);
+        im(:,:,3)=B(:,:,i);
+        imwrite(uint8(im),nRefFramesOutputPath);
+    end
+
+    end
+end
+
+function generateYOnlyVideo(Y, nFrame, YUVOutputPath)
+    fid = createOrClearFile(YUVOutputPath);
+    for i=1:nFrame
+        fwrite(fid,uint8(Y(:,:,i)'),'uchar');
+    end
+    fclose(fid);
 end
