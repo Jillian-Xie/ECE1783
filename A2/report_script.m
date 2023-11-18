@@ -55,8 +55,8 @@ function part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath)
         splitPercentages = [splitPercentages, splitPercentage];
     end
 
-    plotAgainstFrame(QPs, splitPercentages, 'QP', 'split percentages', 'split percentages varying QP', 'q2.jpeg', plotOutputPath);
-    plotAgainstFrame(totalBits, splitPercentages, 'total bits', 'split percentages', 'split percentages varying total bits', 'q3.jpeg', plotOutputPath);
+    plotAgainstFrame(QPs, splitPercentages, 'QP', 'split percentages', 'split percentages vs. QP', 'q2.jpeg', plotOutputPath);
+    plotAgainstFrame(totalBits, splitPercentages, 'total bits', 'split percentages', 'split percentages vs. total bits', 'q3.jpeg', plotOutputPath);
 end
 
 function plotAgainstFrame(x_frame, yVals, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath)
@@ -65,7 +65,6 @@ function plotAgainstFrame(x_frame, yVals, xaxisLabel, yaxisLabel, titleStr, file
         plot(x_frame, yVals(i, :));
         hold on
     end
-    legend('location', 'best');
     xlabel(xaxisLabel);
     ylabel(yaxisLabel);
     grid on;
