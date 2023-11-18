@@ -166,14 +166,14 @@ else
     totalBitsNonSplit = 0;
     totalBitsSplit = 0;
     
-%     for splitIndex = 1:4
-%         totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
-%     end
-    
-%     totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
+    for splitIndex = 1:4
+        totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
+    end
+
+    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
     
     % for modes
-    totalBitsNonSplit = totalBitsNonSplit + 1;
+    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(modeNonSplit - previousMode)));
     modesSplitDifferentialEncoded = modesSplit;
     modesSplitDifferentialEncoded(1,1) = modesSplit(1,1) - previousMode;
     modesSplitDifferentialEncoded(1,2) = modesSplit(1,2) - modesSplit(1,1);

@@ -81,7 +81,7 @@ else
     totalBitsSplit = 0;
     
     [encodedQuantizedBlockNonSplit, quantizedBlockNonSplit] = dctQuantizeAndEncode(residualBlockNonSplit, QP, blockSize);
-%     totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
+    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
     
     smallBlockQP = QP - 1;
     if smallBlockQP < 0
@@ -93,7 +93,7 @@ else
     for splitIndex = 1:4
         [encodedQuantizedBlockSplit(1, splitIndex), quantizedBlockSplit(:, :, splitIndex)] = ...
             dctQuantizeAndEncode(residualBlockSplit(:, :, splitIndex), smallBlockQP, splitSize);
-%         totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
+        totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
     end
     
     % for MVs
