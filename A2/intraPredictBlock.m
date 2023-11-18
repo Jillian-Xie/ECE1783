@@ -1,4 +1,4 @@
-function [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalReference, horizontalReference, currentBlock, blockSize, QP, VBSEnable, FMEEnable, FastME, Lambda)
+function [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalReference, horizontalReference, currentBlock, blockSize, QP, previousMode, VBSEnable, FMEEnable, FastME, Lambda)
 
 % return values: 
 %     split: boolean indicating whether we split this block 
@@ -166,15 +166,20 @@ else
     totalBitsNonSplit = 0;
     totalBitsSplit = 0;
     
-    for splitIndex = 1:4
-        totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
-    end
+%     for splitIndex = 1:4
+%         totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
+%     end
     
-    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
+%     totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
     
     % for modes
     totalBitsNonSplit = totalBitsNonSplit + 1;
-    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(modesSplit)));
+    modesSplitDifferentialEncoded = modesSplit;
+    modesSplitDifferentialEncoded(1,1) = modesSplit(1,1) - previousMode;
+    modesSplitDifferentialEncoded(1,2) = modesSplit(1,2) - modesSplit(1,1);
+    modesSplitDifferentialEncoded(1,3) = modesSplit(1,3) - modesSplit(1,2);
+    modesSplitDifferentialEncoded(1,4) = modesSplit(1,4) - modesSplit(1,3);
+    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(modesSplitDifferentialEncoded)));
     
     JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
     Jsplit = SADSplit + Lambda * totalBitsSplit;
