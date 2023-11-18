@@ -57,21 +57,21 @@ else
     if FastME == false
         [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = integerPixelFullSearch(refFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, r);
     else
-        [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = fastMotionEstimation(refFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, MVP);
+        [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = fastMotionEstimation(refFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, bestMVSplit(1, :));
     end
     
     % bottom left
     if FastME == false
         [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = integerPixelFullSearch(refFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, r);
     else
-        [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = fastMotionEstimation(refFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, MVP);
+        [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = fastMotionEstimation(refFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, bestMVSplit(2, :));
     end
     
     % top right
     if FastME == false
         [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = integerPixelFullSearch(refFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, r);
     else
-        [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = fastMotionEstimation(refFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, MVP);
+        [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = fastMotionEstimation(refFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, bestMVSplit(3, :));
     end
     
     SADNonSplit = bestMAENonSplit * blockSize * blockSize;
@@ -97,11 +97,16 @@ else
     end
     
     % for MVs
-    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(bestMVNonSplit)));
+    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(int32(bestMVNonSplit) - MVP)));
     % note we need to transpose bestMVSplit first before reshaping to get
     % row-wise reshaping
     % reshape([1,2,3; 4,5,6]', 1, []) = [1 2 3 4 5 6]
-    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(bestMVSplit', 1, []))));
+    bestMVSplitDifferentialEncoded = int32(bestMVSplit);
+    bestMVSplitDifferentialEncoded(1, :) = bestMVSplit(1, :) - MVP;
+    bestMVSplitDifferentialEncoded(2, :) = bestMVSplit(2, :) - bestMVSplit(1, :);
+    bestMVSplitDifferentialEncoded(3, :) = bestMVSplit(3, :) - bestMVSplit(3, :);
+    bestMVSplitDifferentialEncoded(4, :) = bestMVSplit(4, :) - bestMVSplit(4, :);
+    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(bestMVSplitDifferentialEncoded', 1, []))));
     
     JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
     Jsplit = SADSplit + Lambda * totalBitsSplit;

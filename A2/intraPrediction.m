@@ -23,7 +23,7 @@ for heightBlockIndex = 1:heightBlockNum
         
         % the left-𝑖 (or top-𝑖) border reconstructed samples
         [verticalRefernce, horizontalReference] = getIntraPredictionReference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
-        [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize, QP, VBSEnable, FMEEnable, FastME, Lambda);
+        [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalRefernce, horizontalReference, currentBlock, blockSize, QP, previousMode, VBSEnable, FMEEnable, FastME, Lambda);
         
         splitInt = [splitInt, split];
         QTCCoeffsFrame = [QTCCoeffsFrame, encodedQuantizedBlock];
