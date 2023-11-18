@@ -6,12 +6,12 @@ nFrame = 10;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
-r = 2;
+r = 4;
 QP = 4;
-I_Period = 3;
+I_Period = 10;
 
-nRefFrames = 2;
-VBSEnable = true;
+nRefFrames = 4;
+VBSEnable = false;
 FMEEnable = false;
 FastME = false;
 
