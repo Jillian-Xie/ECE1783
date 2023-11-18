@@ -166,11 +166,11 @@ else
     totalBitsNonSplit = 0;
     totalBitsSplit = 0;
     
-    for splitIndex = 1:4
-        totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
-    end
+%     for splitIndex = 1:4
+%         totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
+%     end
     
-    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
+%     totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
     
     % for modes
     totalBitsNonSplit = totalBitsNonSplit + 1;
