@@ -50,9 +50,11 @@ for i = 1:(nargin-3)
     legends(i, :) = "nRefFrames = " + int2str(varargin{i}.nRefFrames);
     x_encoder_time(i) = varargin{i}.nRefFrames;
     x_decoder_time(i) = varargin{i}.nRefFrames;
+    
+    Lambda = getLambda(varargin{i}.QP);
 
     tic
-    reconstructedY = encoder(varargin{i}.yuvInputFileName, varargin{i}.nFrame, varargin{i}.width, varargin{i}.height, varargin{i}.blockSize, varargin{i}.r, varargin{i}.QP, varargin{i}.I_Period, varargin{i}.nRefFrames, varargin{i}.VBSEnable, varargin{i}.FMEEnable, varargin{i}.FastME);
+    reconstructedY = encoder(varargin{i}.yuvInputFileName, varargin{i}.nFrame, varargin{i}.width, varargin{i}.height, varargin{i}.blockSize, varargin{i}.r, varargin{i}.QP, varargin{i}.I_Period, varargin{i}.nRefFrames, varargin{i}.VBSEnable, varargin{i}.FMEEnable, varargin{i}.FastME, Lambda);
     toc;
 
     y_encoder_time(i) = toc;
