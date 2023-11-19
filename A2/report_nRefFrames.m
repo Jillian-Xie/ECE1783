@@ -2,7 +2,7 @@ clc; clear; close all;
 
 % config info
 
-param_1 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'], 'yuvInputFileName', 'synthetic.yuv', 'nFrame', 10, 'width', 352, 'height', 288, 'blockSize', 16, 'r', 4, 'QP', 4, 'I_Period', 3 , 'nRefFrames', 1, 'VBSEnable', false, 'FMEEnable', false, 'FastME', false);
+param_1 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'], 'yuvInputFileName', 'synthetic.yuv', 'nFrame', 10, 'width', 352, 'height', 288, 'blockSize', 16, 'r', 4, 'QP', 1, 'I_Period', 8 , 'nRefFrames', 1, 'VBSEnable', true, 'FMEEnable', false, 'FastME', false);
 param_2 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'], 'yuvInputFileName', 'synthetic.yuv', 'nFrame', 10, 'width', 352, 'height', 288, 'blockSize', 16, 'r', 4, 'QP', 4, 'I_Period', 3 , 'nRefFrames', 2, 'VBSEnable', false, 'FMEEnable', false, 'FastME', false);
 param_3 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'], 'yuvInputFileName', 'synthetic.yuv', 'nFrame', 10, 'width', 352, 'height', 288, 'blockSize', 16, 'r', 4, 'QP', 4, 'I_Period', 3 , 'nRefFrames', 3, 'VBSEnable', false, 'FMEEnable', false, 'FastME', false);
 param_4 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'], 'yuvInputFileName', 'synthetic.yuv', 'nFrame', 10, 'width', 352, 'height', 288, 'blockSize', 16, 'r', 4, 'QP', 4, 'I_Period', 3 , 'nRefFrames', 4, 'VBSEnable', false, 'FMEEnable', false, 'FastME', false);
@@ -18,14 +18,14 @@ param_11 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'
 param_12 = struct( 'yuvOutputFileName', ['DecoderOutput' filesep 'outputYUV.yuv'], 'yuvInputFileName', 'synthetic.yuv', 'nFrame', 10, 'width', 352, 'height', 288, 'blockSize', 16, 'r', 4, 'QP', 4, 'I_Period', 10 , 'nRefFrames', 4, 'VBSEnable', false, 'FMEEnable', false, 'FastME', false);
 
 % Plots
-runAndDrawCurves("PSNR vs FrameIndex (qp = 4 i = 16 IPeriod = 3)", "PSNR", "FrameIndex", param_1, param_2, param_3, param_4);
-runAndDrawCurves("Bitcount vs FrameIndex (qp = 4 i = 16 IPeriod = 3)", "Bitcount", "FrameIndex", param_1, param_2, param_3, param_4);
-
-runAndDrawCurves("PSNR vs FrameIndex (qp = 4 i = 16 IPeriod = 6)", "PSNR", "FrameIndex", param_5, param_6, param_7, param_8);
-runAndDrawCurves("Bitcount vs FrameIndex (qp = 4 i = 16 IPeriod = 6)", "Bitcount", "FrameIndex", param_5, param_6, param_7, param_8);
-
-runAndDrawCurves("PSNR vs FrameIndex (qp = 4 i = 16 IPeriod = 10)", "PSNR", "FrameIndex", param_9, param_10, param_11, param_12);
-runAndDrawCurves("Bitcount vs FrameIndex (qp = 4 i = 16 IPeriod = 10)", "Bitcount", "FrameIndex", param_9, param_10, param_11, param_12);
+runAndDrawCurves("PSNR vs FrameIndex (qp = 1 i = 16 IPeriod = 8)", "PSNR", "FrameIndex", param_1);
+% runAndDrawCurves("Bitcount vs FrameIndex (qp = 4 i = 16 IPeriod = 3)", "Bitcount", "FrameIndex", param_1, param_2, param_3, param_4);
+% 
+% runAndDrawCurves("PSNR vs FrameIndex (qp = 4 i = 16 IPeriod = 6)", "PSNR", "FrameIndex", param_5, param_6, param_7, param_8);
+% runAndDrawCurves("Bitcount vs FrameIndex (qp = 4 i = 16 IPeriod = 6)", "Bitcount", "FrameIndex", param_5, param_6, param_7, param_8);
+% 
+% runAndDrawCurves("PSNR vs FrameIndex (qp = 4 i = 16 IPeriod = 10)", "PSNR", "FrameIndex", param_9, param_10, param_11, param_12);
+% runAndDrawCurves("Bitcount vs FrameIndex (qp = 4 i = 16 IPeriod = 10)", "Bitcount", "FrameIndex", param_9, param_10, param_11, param_12);
 
 
 function runAndDrawCurves(fig_title, y_axis, x_axis, varargin) % varargin: parameters

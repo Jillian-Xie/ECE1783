@@ -181,6 +181,7 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         MV = int32(previousMV) + int32(MVDiff);
                         
                         refFrameMatrix(heightBlockIndex, widthBlockIndex, currentFrameNum) = MV(3);
+                        xMVMatrix()
                         
                         previousMV = MV;
 
