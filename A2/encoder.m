@@ -1,4 +1,4 @@
-function reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME)
+function reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, Lambda)
 
 [Y,U,V] = importYUV(yuvInputFileName, width, height ,nFrame);
 
@@ -17,9 +17,6 @@ heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 QTCCoeffs = strings([nFrame, widthBlockNum * heightBlockNum * 4]);
 MDiffs = strings([nFrame, 1]);
 splits = strings([nFrame, 1]);
-
-% https://ieeexplore.ieee.org/document/1626308
-Lambda = 0.85 * (2 ^ ((QP-12) / 3));
 
 EncoderReconstructOutputPath = 'EncoderReconstructOutput\';
 if ~exist(EncoderReconstructOutputPath,'dir')

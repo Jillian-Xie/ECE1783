@@ -12,98 +12,14 @@ nFrame = 10;
 width  = uint32(352);
 height = uint32(288);
 
-sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath);
-% part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath);
-
-function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
-    blockSize = 16;
-    r = 4;
-    QP = 10;
-    I_Period = 8;
-
-    nRefFrames = 1;
-    VBSEnable = false;
-    FMEEnable = false;
-    FastME = false;
-
-    visualizeVBS = VBSEnable && true;
-
-    % encoder
-    tic
-    reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, 0);
-    toc
-
-    load('QTCCoeffs.mat', 'QTCCoeffs');
-    load('MDiffs.mat', 'MDiffs');
-    load('splits.mat', 'splits');
-
-    totalBitsFrame = 0;
-    for i = 1:nFrame
-        totalBitsFrame = totalBitsFrame + sum(strlength(QTCCoeffs(i,:)), "all") + sum(strlength(MDiffs(i,:)), "all") + sum(strlength(splits(i,:)), "all");
-    end
-
-%     totalBits = [totalBits, totalBitsFrame];
-
-    % decoder
-    tic
-    decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
-    toc
-    
-    YOutput = importYOnly(['DecoderOutput' filesep 'outputYUV.yuv'], width, height ,nFrame);
-    [YOriginal, U, V] = importYUV(yuvInputFileName, width, height, nFrame);
-    
-    disp(strcat('VBS disabled, PSNR=', string(psnr(YOutput, YOriginal)), ', total Bits=', string(totalBitsFrame), ', PSNR/totalBits=', string(psnr(YOutput, YOriginal)/totalBitsFrame)));
-    
-    VBSEnable = true;
-
-    % https://ieeexplore.ieee.org/document/1626308
-%     Lambdas = [4:6:50] .* (2 ^ ((QP-12) / 3));
-    Lambdas = [125:1:135];
-    
-    totalBits = [];
-    PSNRs = [];
-    PSNR_over_bits = [];
-    
-    for Lambda = Lambdas
-        % encoder
-        tic
-        reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, Lambda);
-        toc
-
-        load('QTCCoeffs.mat', 'QTCCoeffs');
-        load('MDiffs.mat', 'MDiffs');
-        load('splits.mat', 'splits');
-
-        totalBitsFrame = 0;
-        for i = 1:nFrame
-            totalBitsFrame = totalBitsFrame + sum(strlength(QTCCoeffs(i,:)), "all") + sum(strlength(MDiffs(i,:)), "all") + sum(strlength(splits(i,:)), "all");
-        end
-
-        totalBits = [totalBits, totalBitsFrame];
-
-        % decoder
-        tic
-        decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
-        toc
-
-        YOutput = importYOnly(['DecoderOutput' filesep 'outputYUV.yuv'], width, height ,nFrame);
-        [YOriginal, U, V] = importYUV(yuvInputFileName, width, height, nFrame);  
-        
-        PSNRs = [PSNRs, psnr(YOutput, YOriginal)];
-        PSNR_over_bits = [PSNR_over_bits, psnr(YOutput, YOriginal)/totalBitsFrame];
-        
-        disp(strcat('Lambda=', string(Lambda), ', PSNR=', string(psnr(YOutput, YOriginal)), ', total Bits=', string(totalBitsFrame), ', PSNR/totalBits=', string(psnr(YOutput, YOriginal)/totalBitsFrame)));
-    end
-    
-    plotAgainstFrame(totalBits, PSNRs, 'totalBits', 'PSNR', 'PSNR vs. totalBits', strcat('qp',string(QP),'.jpeg'), plotOutputPath);
-    plotAgainstFrame(Lambdas, PSNR_over_bits, 'Lambda', 'PSNR/Total bits', strcat('PSNR/bits vs. lambda when QP=',string(QP)), strcat('qp',string(QP),'_psnr_over_bits.jpeg'), plotOutputPath);
-end
-
+% sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath);
+part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath);
 
 function part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath)
     blockSize = 16;
     r = 4;
-    QPs = double(1:int8(log2(blockSize) + 7));
+    QPs = [1,4,7,10];
+%     QPs = double(1:int8(log2(blockSize) + 7))
     I_Period = 8;
 
     nRefFrames = 1;
@@ -117,9 +33,10 @@ function part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath)
     splitPercentages = [];
 
     for QP = QPs
+        Lambda = getLambda(QP);
         % encoder
         tic
-        reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME);
+        reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, Lambda);
         toc
 
         load('QTCCoeffs.mat', 'QTCCoeffs');
@@ -148,7 +65,7 @@ end
 function plotAgainstFrame(x_frame, yVals, xaxisLabel, yaxisLabel, titleStr, filenameStr, plotOutputPath)
     figure
     for i = 1:size(yVals, 1)
-        plot(x_frame, yVals(i, :));
+        plot(x_frame, yVals(i, :), '-o');
         hold on
     end
     xlabel(xaxisLabel);
@@ -159,4 +76,105 @@ function plotAgainstFrame(x_frame, yVals, xaxisLabel, yaxisLabel, titleStr, file
     title(titleStr);
     saveas(gcf, fullfile(strcat(plotOutputPath, filenameStr)));
     delete(gcf);
+end
+
+function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
+    blockSize = 16;
+    r = 4;
+    QPs = [1,4,7,10];
+    I_Period = 8;
+
+    nRefFrames = 1;
+    VBSEnable = false;
+    FMEEnable = false;
+    FastME = false;
+
+    visualizeVBS = VBSEnable && true;
+    
+    for QP = QPs
+        VBSEnable = true;
+
+        % https://ieeexplore.ieee.org/document/1626308
+        if QP == 1
+            Lambdas = [0, logspace(log10(0.01), log10(0.8), 7)]
+        elseif QP == 4
+            Lambdas = [0, logspace(log10(0.01), log10(1.5), 7)]
+        elseif QP == 7
+            Lambdas = [0, logspace(log10(1), log10(15), 7)]
+        elseif QP == 10
+            Lambdas = [0, logspace(log10(3), log10(80), 7)]
+        end
+
+        totalBits = [];
+        PSNRs = [];
+
+        for Lambda = Lambdas
+            % encoder
+            tic
+            reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, Lambda);
+            toc
+
+            load('QTCCoeffs.mat', 'QTCCoeffs');
+            load('MDiffs.mat', 'MDiffs');
+            load('splits.mat', 'splits');
+
+            totalBitsFrame = 0;
+            for i = 1:nFrame
+                totalBitsFrame = totalBitsFrame + sum(strlength(QTCCoeffs(i,:)), "all") + sum(strlength(MDiffs(i,:)), "all") + sum(strlength(splits(i,:)), "all");
+            end
+
+            totalBits = [totalBits, totalBitsFrame];
+
+            % decoder
+            tic
+            decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
+            toc
+
+            YOutput = importYOnly(['DecoderOutput' filesep 'outputYUV.yuv'], width, height ,nFrame);
+            [YOriginal, U, V] = importYUV(yuvInputFileName, width, height, nFrame);  
+
+            avg_psnr = 0;
+            for i = 1:nFrame
+                avg_psnr = avg_psnr + psnr(YOutput(:,:,i), YOriginal(:,:,i)) / nFrame;
+            end
+
+            PSNRs = [PSNRs, avg_psnr];
+
+            disp(strcat('Lambda=', string(Lambda), ', PSNR=', string(avg_psnr), ', total Bits=', string(totalBitsFrame), ', PSNR/totalBits=', string(avg_psnr/totalBitsFrame)));
+        end
+
+        VBSEnable = false;
+        % encoder
+        tic
+        reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, 0);
+        toc
+
+        load('QTCCoeffs.mat', 'QTCCoeffs');
+        load('MDiffs.mat', 'MDiffs');
+        load('splits.mat', 'splits');
+
+        totalBitsFrame = 0;
+        for i = 1:nFrame
+            totalBitsFrame = totalBitsFrame + sum(strlength(QTCCoeffs(i,:)), "all") + sum(strlength(MDiffs(i,:)), "all") + sum(strlength(splits(i,:)), "all");
+        end
+        totalBits = [totalBits, totalBitsFrame];
+
+        % decoder
+        tic
+        decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
+        toc
+
+        YOutput = importYOnly(['DecoderOutput' filesep 'outputYUV.yuv'], width, height ,nFrame);
+        [YOriginal, U, V] = importYUV(yuvInputFileName, width, height, nFrame);
+
+        avg_psnr = 0;
+        for i = 1:nFrame
+            avg_psnr = avg_psnr + psnr(YOutput(:,:,i), YOriginal(:,:,i)) / nFrame;
+        end
+        PSNRs = [PSNRs, avg_psnr];
+
+        disp(strcat('VBS disabled, PSNR=', string(avg_psnr), ', total Bits=', string(totalBitsFrame)));
+
+        plotAgainstFrame(totalBits, PSNRs, 'totalBits', 'PSNR', strcat('R-D plot when QP=',string(QP), ' varying Lambda'), strcat('qp',string(QP),'.jpeg'), plotOutputPath);
+    end
 end

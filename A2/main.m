@@ -9,6 +9,7 @@ blockSize = 16;
 r = 4;
 QP = 4;
 I_Period = 10;
+Lambda = getLambda(QP);
 
 nRefFrames = 4;
 VBSEnable = false;
@@ -19,7 +20,7 @@ visualizeVBS = VBSEnable && true;
 
 % encoder
 tic
-reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME);
+reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, Lambda);
 toc
 
 load('QTCCoeffs.mat', 'QTCCoeffs');
