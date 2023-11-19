@@ -1,8 +1,8 @@
 clc; clear; close all; 
 
 % config info
-yuvInputFileName = 'synthetic.yuv';
-nFrame = 10;
+yuvInputFileName = 'foreman420_cif.yuv';
+nFrame = 5;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
@@ -12,11 +12,11 @@ I_Period = 10;
 Lambda = getLambda(QP);
 
 nRefFrames = 4;
-VBSEnable = false;
+VBSEnable = true;
 FMEEnable = false;
 FastME = false;
 
-visualizeVBS = VBSEnable && true;
+visualizeVBS = false;
 
 % encoder
 tic

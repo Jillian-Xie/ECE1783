@@ -11,6 +11,12 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
 
     refFrameMatrix = zeros(heightBlockNum, widthBlockNum, nFrame);
     
+    xCell = cell(nFrame);
+    yCell = cell(nFrame);
+    uCell = cell(nFrame);
+    vCell = cell(nFrame);
+
+    
     splitSize = blockSize / 2;
     smallBlockQP = QP - 1;
     if smallBlockQP < 0
@@ -24,6 +30,11 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
         MDiff = MDiffs(currentFrameNum, 1);
 
         MDiffFrame = expGolombDecoding(convertStringsToChars(MDiff));
+
+        xMVMatrix = [];
+        yMVMatrix = [];
+        uMVMatrix = [];
+        vMVMatrix = [];
         
         if VBSEnable
             splitSequence = splits(currentFrameNum, 1);
@@ -66,9 +77,17 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         if mode == 0
                             % vertical
                             thisBlock = int32(approximatedResidualBlock) + int32(verticalReference);
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, 0];
+                            vMVMatrix = [vMVMatrix, blockSize];
                         else
                             % horizontal
                             thisBlock = int32(approximatedResidualBlock) + int32(horizontalReference);
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, blockSize];
+                            vMVMatrix = [vMVMatrix, 0];
                         end
                         reconstructedFrame(top : bottom, left : right) = thisBlock;
                         
@@ -100,9 +119,17 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         if modeTopLeft == 0
                             % vertical
                             thisBlock = int32(approximatedResidualBlockTopLeft) + int32(verticalReference(1, 1:splitSize));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, 0];
+                            vMVMatrix = [vMVMatrix, splitSize];
                         else
                             % horizontal
                             thisBlock = int32(approximatedResidualBlockTopLeft) + int32(horizontalReference(1:splitSize, 1));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, splitSize];
+                            vMVMatrix = [vMVMatrix, 0];
                         end
                         reconstructedFrame(top : top + splitSize - 1, left : left + splitSize - 1) = thisBlock;
                         
@@ -115,9 +142,17 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         if modeTopRight == 0
                             % vertical
                             thisBlock = int32(approximatedResidualBlockTopRight) + int32(verticalReference(1, splitSize+1:2*splitSize));
+                            xMVMatrix = [xMVMatrix, left+splitSize];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, 0];
+                            vMVMatrix = [vMVMatrix, splitSize];
                         else
                             % horizontal
                             thisBlock = int32(approximatedResidualBlockTopRight) + int32(reconstructedFrame(top : top + splitSize - 1, left + splitSize - 1));
+                            xMVMatrix = [xMVMatrix, left+splitSize];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, splitSize];
+                            vMVMatrix = [vMVMatrix, 0];
                         end
                         reconstructedFrame(top : top + splitSize - 1, left + splitSize : right) = thisBlock;
                         
@@ -130,9 +165,17 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         if modeBottomLeft == 0
                             % vertical
                             thisBlock = int32(approximatedResidualBlockBottomLeft) + int32(reconstructedFrame(top + splitSize - 1, left : left + splitSize - 1));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top+splitSize];
+                            uMVMatrix = [uMVMatrix, 0];
+                            vMVMatrix = [vMVMatrix, splitSize];
                         else
                             % horizontal
                             thisBlock = int32(approximatedResidualBlockBottomLeft) + int32(horizontalReference(splitSize+1:2*splitSize, 1));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top+splitSize];
+                            uMVMatrix = [uMVMatrix, splitSize];
+                            vMVMatrix = [vMVMatrix, 0];
                         end
                         reconstructedFrame(top + splitSize : bottom, left : left + splitSize - 1) = thisBlock;
                         
@@ -145,9 +188,17 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         if modeBottomRight == 0
                             % vertical
                             thisBlock = int32(approximatedResidualBlockBottomRight) + int32(reconstructedFrame(top + splitSize - 1, left + splitSize : right));
+                            xMVMatrix = [xMVMatrix, left+splitSize];
+                            yMVMatrix = [yMVMatrix, top+splitSize];
+                            uMVMatrix = [uMVMatrix, 0];
+                            vMVMatrix = [vMVMatrix, splitSize];
                         else
                             % horizontal
                             thisBlock = int32(approximatedResidualBlockBottomRight) + int32(reconstructedFrame(top + splitSize : bottom, left + splitSize - 1));
+                            xMVMatrix = [xMVMatrix, left+splitSize];
+                            yMVMatrix = [yMVMatrix, top+splitSize];
+                            uMVMatrix = [uMVMatrix, splitSize];
+                            vMVMatrix = [vMVMatrix, 0];
                         end
                         reconstructedFrame(top + splitSize : bottom, left + splitSize : right) = thisBlock;
                         
@@ -181,7 +232,6 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         MV = int32(previousMV) + int32(MVDiff);
                         
                         refFrameMatrix(heightBlockIndex, widthBlockIndex, currentFrameNum) = MV(3);
-                        xMVMatrix()
                         
                         previousMV = MV;
 
@@ -191,6 +241,10 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         else
                             refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
                             thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, MV(1,2)];
+                            vMVMatrix = [vMVMatrix, MV(1,1)];
                         end
 
                         reconstructedFrame(top : bottom, left : right) = thisBlock;
@@ -238,6 +292,10 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         else
                             thisBlock = int32(approximatedResidualBlockTopLeft) + ...
                             int32(refFrameTopLeft(top + MVTopLeft(1,1) : top + splitSize - 1 + MVTopLeft(1,1), left + MVTopLeft(1,2) : left + splitSize - 1 + MVTopLeft(1,2)));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, MVTopLeft(1,2)];
+                            vMVMatrix = [vMVMatrix, MVTopLeft(1,1)];
                         end
 
                         reconstructedFrame(top : top + splitSize - 1, left : left + splitSize - 1) = thisBlock;
@@ -255,6 +313,10 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         else
                             thisBlock = int32(approximatedResidualBlockTopRight) + ...
                             int32(refFrameTopRight(top + MVTopRight(1,1) : top + splitSize - 1 + MVTopRight(1,1), left + splitSize + MVTopRight(1,2) : right + MVTopRight(1,2)));
+                            xMVMatrix = [xMVMatrix, left + splitSize];
+                            yMVMatrix = [yMVMatrix, top];
+                            uMVMatrix = [uMVMatrix, MVTopRight(1,2)];
+                            vMVMatrix = [vMVMatrix, MVTopRight(1,1)];
                         end
 
                         reconstructedFrame(top : top + splitSize - 1, left + splitSize : right) = thisBlock;
@@ -272,6 +334,10 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         else
                             thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
                             int32(refFrameBottomLeft(top + splitSize + MVBottomLeft(1,1) : bottom + MVBottomLeft(1,1), left + MVBottomLeft(1,2) : left + splitSize - 1 + MVBottomLeft(1,2)));
+                            xMVMatrix = [xMVMatrix, left];
+                            yMVMatrix = [yMVMatrix, top + splitSize];
+                            uMVMatrix = [uMVMatrix, MVBottomLeft(1,2)];
+                            vMVMatrix = [vMVMatrix, MVBottomLeft(1,1)];
                         end
 
                         reconstructedFrame(top + splitSize : bottom, left : left + splitSize - 1) = thisBlock;
@@ -289,6 +355,10 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
                         else
                             thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(top + splitSize + MVBottomRight(1,1) : bottom + MVBottomRight(1,1), left + splitSize + MVBottomRight(1,2) : right + MVBottomRight(1,2)));
+                            xMVMatrix = [xMVMatrix, left + splitSize];
+                            yMVMatrix = [yMVMatrix, top + splitSize];
+                            uMVMatrix = [uMVMatrix, MVBottomRight(1,2)];
+                            vMVMatrix = [vMVMatrix, MVBottomRight(1,1)];
                         end
 
                         reconstructedFrame(top + splitSize : bottom, left + splitSize : right) = thisBlock;
@@ -304,6 +374,11 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
             end
         end
         reconstructedY(:,:,currentFrameNum) = reconstructedFrame;
+
+        xCell{currentFrameNum} = xMVMatrix;
+        yCell{currentFrameNum} = yMVMatrix;
+        uCell{currentFrameNum} = uMVMatrix;
+        vCell{currentFrameNum} = vMVMatrix;
 
         % get YOnly vedio
         % YOnlyFilePath = [DecoderOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
@@ -322,8 +397,35 @@ function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Perio
     if visualizeVBS
         reconstructedY = addFramesToVisualizeVBS(reconstructedY, nFrame, width, height, blockSize, splits);
     end
+    
     plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath, refFrameMatrix, blockSize);
+    
+    if FMEEnable == false
+        R = reconstructedY(1:height, 1:width, :);
+        G = reconstructedY(1:height, 1:width, :);
+        B = reconstructedY(1:height, 1:width, :);
+
+        for i=1:nFrame
+            x = xCell{i};
+            y = yCell{i};
+            u = uCell{i};
+            v = vCell{i};
+            backgroundFileName = DecoderOutputPath + sprintf("%04d",i) + ".png";
+            MVOutputFileName = DecoderOutputPath + "MM_" + sprintf("%04d",i) + ".jpeg";
+            quiver(axes(), x,y,u,v);
+            axis tight;
+            set(gca,'YDir','reverse');
+            set(gca,'XTick',[],'YTick',[]);
+            hold on
+            I = imread(backgroundFileName);
+            h = image(xlim,ylim,I);
+            uistack(h,'bottom')
+            saveas(gcf, fullfile(MVOutputFileName));
+        end
+    end
+
     generateYOnlyVideo(uint8(reconstructedY(1:height, 1:width, :)), nFrame, ['DecoderOutput' filesep 'outputYUV.yuv']);
+
 end
 
 function approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, QP)
