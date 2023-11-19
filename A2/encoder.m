@@ -11,6 +11,8 @@ referenceFrames(1:size(paddingY,1),1:size(paddingY,2),1) = int32(128);
 % Reconstructed Y-only frames (with padding)
 reconstructedY(1:size(paddingY,1),1:size(paddingY,2),1:nFrame) = paddingY;
 
+interpolateRefFrames(1:2*height-1, 1:2*width-1, nFrame) = int32(0);
+
 widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
 heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
@@ -35,7 +37,7 @@ for currentFrameNum = 1:nFrame
         % Update reference frame with reconstructed frame
         referenceFrames = reconstructedFrame;
     else
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, reconstructedFrame] = interPrediction(referenceFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda);
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, reconstructedFrame] = interPrediction(referenceFrames, interpolateRefFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -45,16 +47,7 @@ for currentFrameNum = 1:nFrame
         referenceFrames = updateRefFrames(reconstructedY, nRefFrames, currentFrameNum, I_Period);
     end
     
-    % get YOnly vedio
-    YOnlyFilePath = [EncoderReconstructOutputPath, sprintf('%04d',currentFrameNum), '.yuv'];
-    fid = createOrClearFile(YOnlyFilePath);
-    fwrite(fid,uint8(reconstructedFrame(1:height,1:width)),'uchar');
-    fclose(fid);
-        
-    YOnlyFilePath = [EncoderReconstructOutputPath, sprintf('%04d',currentFrameNum), '.csv'];
-    fid = createOrClearFile(YOnlyFilePath);
-    writematrix(uint8(reconstructedFrame(1:height,1:width)), YOnlyFilePath);
-    fclose(fid);
+    interpolateRefFrames(:,:,currentFrameNum) = interpolateFrames(reconstructedFrame);
 end
 
 % Store data in binary format

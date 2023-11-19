@@ -2,21 +2,24 @@ clc; clear; close all;
 
 % config info
 yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = 5;
+nFrame = 3;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
 r = 4;
-QP = 4;
+QP = 1;
 I_Period = 10;
 Lambda = getLambda(QP);
 
 nRefFrames = 4;
 VBSEnable = true;
-FMEEnable = false;
+FMEEnable = true;
 FastME = false;
 
-visualizeVBS = false;
+visualizeVBS = VBSEnable && true;
+visualizeRGB = true;
+visualizeMM = (~FMEEnable) && true;
+visualizeNRF= true;
 
 % encoder
 tic
@@ -29,5 +32,5 @@ load('splits.mat', 'splits');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
+decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, reconstructedY);
 toc
