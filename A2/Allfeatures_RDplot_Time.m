@@ -73,7 +73,7 @@ for q = 1:length(QPs)
     FMEEnable = true;
     FastME = false;
     nRefFrames = 1;
-    [bitSizesFME(q), encTimesFastME(q), decTimesFastME(q), psnrValuesFastME(q)] = runTest(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, false, Lambda);
+    [bitSizesFME(q), encTimesFME(q), decTimesFME(q), psnrValuesFME(q)] = runTest(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, false, Lambda);
 
     VBSEnable = false;
     FMEEnable = false;
@@ -141,4 +141,3 @@ function totalBits = calculateBitSize(QTCCoeffs, MDiffs, splits, nFrame)
         totalBits = totalBits + sum(strlength(QTCCoeffs(i,:)), "all") + sum(strlength(MDiffs(i,:)), "all") + sum(strlength(splits(i,:)), "all");
     end
 end
-
