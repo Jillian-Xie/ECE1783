@@ -26,6 +26,8 @@ end
 
 totalSplit = 0;
 
+FMEEnable = (FMEEnable && (~FastME));
+
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);

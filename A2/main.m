@@ -14,7 +14,7 @@ Lambda = getLambda(QP);
 nRefFrames = 4;
 VBSEnable = true;
 FMEEnable = true;
-FastME = false;
+FastME = true;
 
 visualizeVBS = VBSEnable && false;
 visualizeRGB = false;
