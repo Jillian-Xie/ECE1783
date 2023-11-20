@@ -7,6 +7,7 @@ paddingY = paddingFrames(Y, blockSize, width, height, nFrame);
 
 % the reference frame for intra- or inter-frame prediction
 referenceFrames(1:size(paddingY,1),1:size(paddingY,2),1) = int32(128); 
+interpolateReferenceFrames(1:2*height-1, 1:2*width-1, 1) = int32(128);
 
 % Reconstructed Y-only frames (with padding)
 reconstructedY(1:size(paddingY,1),1:size(paddingY,2),1:nFrame) = paddingY;
@@ -34,20 +35,23 @@ for currentFrameNum = 1:nFrame
         splits(currentFrameNum, 1) = splitFrame;
         % Update reconstructed Y-only frames with reconstructed frame
         reconstructedY(:, :, currentFrameNum) = reconstructedFrame;
+        interpolateRefFrames(:,:,currentFrameNum) = interpolateFrames(reconstructedFrame);
         % Update reference frame with reconstructed frame
         referenceFrames = reconstructedFrame;
+        interpolateReferenceFrames = interpolateRefFrames(:,:,currentFrameNum);
     else
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, reconstructedFrame] = interPrediction(referenceFrames, interpolateRefFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda);
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, reconstructedFrame] = interPrediction(referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
         % Update reconstructed Y-only frames with reconstructed frame
         reconstructedY(:, :, currentFrameNum) = reconstructedFrame;
+        interpolateRefFrames(:,:,currentFrameNum) = interpolateFrames(reconstructedFrame);
         % Update reference frame with reconstructed Y-only frames
         referenceFrames = updateRefFrames(reconstructedY, nRefFrames, currentFrameNum, I_Period);
+        interpolateReferenceFrames = updateRefFrames(interpolateRefFrames, nRefFrames, currentFrameNum, I_Period);
     end
-    
-    interpolateRefFrames(:,:,currentFrameNum) = interpolateFrames(reconstructedFrame);
+
 end
 
 % Store data in binary format

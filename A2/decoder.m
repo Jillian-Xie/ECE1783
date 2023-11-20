@@ -384,6 +384,7 @@ for currentFrameNum = 1:nFrame
     yCell{currentFrameNum} = yMVMatrix;
     uCell{currentFrameNum} = uMVMatrix;
     vCell{currentFrameNum} = vMVMatrix;
+
 end
 
 splitPercentage = totalSplit / double((widthBlockNum * heightBlockNum * nFrame));

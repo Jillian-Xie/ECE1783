@@ -16,10 +16,10 @@ VBSEnable = true;
 FMEEnable = true;
 FastME = false;
 
-visualizeVBS = VBSEnable && true;
-visualizeRGB = true;
-visualizeMM = (~FMEEnable) && true;
-visualizeNRF= true;
+visualizeVBS = VBSEnable && false;
+visualizeRGB = false;
+visualizeMM = (~FMEEnable) && false;
+visualizeNRF= false;
 
 % encoder
 tic
