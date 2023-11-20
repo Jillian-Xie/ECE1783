@@ -18,7 +18,7 @@ part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath);
 function part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath)
     blockSize = 16;
     r = 4;
-    QPs = [1,4,7,10];
+    QPs = [1,4,7];
 %     QPs = double(1:int8(log2(blockSize) + 7))
     I_Period = 8;
 
@@ -52,7 +52,7 @@ function part2And3(yuvInputFileName, nFrame, width, height, plotOutputPath)
 
         % decoder
         tic
-        splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
+        splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, false, false, false, reconstructedY);
         toc
         
         splitPercentages = [splitPercentages, splitPercentage];
@@ -81,7 +81,8 @@ end
 function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
     blockSize = 16;
     r = 4;
-    QPs = [1,4,7,10];
+%     QPs = [1,4,7,10];
+    QPs = [2];
     I_Period = 8;
 
     nRefFrames = 1;
@@ -97,6 +98,8 @@ function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
         % https://ieeexplore.ieee.org/document/1626308
         if QP == 1
             Lambdas = [0, logspace(log10(0.01), log10(0.8), 7)]
+        elseif QP == 2
+            Lambdas = [0, logspace(log10(0.01), log10(1), 7)]
         elseif QP == 4
             Lambdas = [0, logspace(log10(0.01), log10(1.5), 7)]
         elseif QP == 7
@@ -127,7 +130,7 @@ function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
 
             % decoder
             tic
-            decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
+            decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, false, false, false, reconstructedY);
             toc
 
             YOutput = importYOnly(['DecoderOutput' filesep 'outputYUV.yuv'], width, height ,nFrame);
@@ -137,6 +140,7 @@ function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
             for i = 1:nFrame
                 avg_psnr = avg_psnr + psnr(YOutput(:,:,i), YOriginal(:,:,i)) / nFrame;
             end
+%             avg_psnr = psnr(YOutput, YOriginal);
 
             PSNRs = [PSNRs, avg_psnr];
 
@@ -161,7 +165,7 @@ function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
 
         % decoder
         tic
-        decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, reconstructedY);
+        decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, false, false, false, reconstructedY);
         toc
 
         YOutput = importYOnly(['DecoderOutput' filesep 'outputYUV.yuv'], width, height ,nFrame);
@@ -171,6 +175,7 @@ function sweepLambda(yuvInputFileName, nFrame, width, height, plotOutputPath)
         for i = 1:nFrame
             avg_psnr = avg_psnr + psnr(YOutput(:,:,i), YOriginal(:,:,i)) / nFrame;
         end
+%         avg_psnr = psnr(YOutput, YOriginal);
         PSNRs = [PSNRs, avg_psnr];
 
         disp(strcat('VBS disabled, PSNR=', string(avg_psnr), ', total Bits=', string(totalBitsFrame)));

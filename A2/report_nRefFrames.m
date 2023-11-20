@@ -64,7 +64,7 @@ for i = 1:(nargin-3)
     load('splits.mat', 'splits');
 
     tic
-    decoder(varargin{i}.nFrame, varargin{i}.width, varargin{i}.height, varargin{i}.blockSize, varargin{i}.QP, varargin{i}.I_Period, varargin{i}.VBSEnable, varargin{i}.FMEEnable, varargin{i}.FastME, QTCCoeffs, MDiffs, splits, false, reconstructedY);
+    decoder(varargin{i}.nFrame, varargin{i}.width, varargin{i}.height, varargin{i}.blockSize, varargin{i}.QP, varargin{i}.I_Period, varargin{i}.VBSEnable, varargin{i}.FMEEnable, varargin{i}.FastME, QTCCoeffs, MDiffs, splits, false, false, false, false, reconstructedY);
     toc;
 
     y_decoder_time(i) = toc;
