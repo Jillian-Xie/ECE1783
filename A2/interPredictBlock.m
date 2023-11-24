@@ -25,7 +25,11 @@ if FastME == false
         [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
     end
 else
-    [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
+    if FMEEnable
+        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
+    else
+        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
+    end
 end
 
 if VBSEnable == false
@@ -57,7 +61,11 @@ else
             [bestMVSplit(1, :), bestMAESplit(1, 1), referenceBlockSplit(:, :, 1), residualBlockSplit(:, :, 1)] = integerPixelFullSearch(refFrames, currentFrame, topLeftWidthPixelIndex, topLeftHeightPixelIndex, splitSize, r);
         end
     else
-        [bestMVSplit(1, :), bestMAESplit(1, 1), referenceBlockSplit(:, :, 1), residualBlockSplit(:, :, 1)] = fastMotionEstimation(refFrames, currentFrame, topLeftWidthPixelIndex, topLeftHeightPixelIndex, splitSize, MVP);
+        if FMEEnable
+            [bestMVSplit(1, :), bestMAESplit(1, 1), referenceBlockSplit(:, :, 1), residualBlockSplit(:, :, 1)] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, topLeftWidthPixelIndex, topLeftHeightPixelIndex, splitSize, MVP);
+        else
+            [bestMVSplit(1, :), bestMAESplit(1, 1), referenceBlockSplit(:, :, 1), residualBlockSplit(:, :, 1)] = fastMotionEstimation(refFrames, currentFrame, topLeftWidthPixelIndex, topLeftHeightPixelIndex, splitSize, MVP);
+        end
     end
 
     % top right
@@ -68,7 +76,11 @@ else
             [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = integerPixelFullSearch(refFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, r);
         end
     else
-        [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = fastMotionEstimation(refFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, bestMVSplit(1, :));
+        if FMEEnable
+            [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, bestMVSplit(1, :));
+        else
+            [bestMVSplit(2, :), bestMAESplit(1, 2), referenceBlockSplit(:, :, 2), residualBlockSplit(:, :, 2)] = fastMotionEstimation(refFrames, currentFrame, topRightWidthPixelIndex, topRightHeightPixelIndex, splitSize, bestMVSplit(1, :));
+        end
     end
 
     % bottom left
@@ -79,7 +91,11 @@ else
             [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = integerPixelFullSearch(refFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, r);
         end
     else
-        [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = fastMotionEstimation(refFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, bestMVSplit(2, :));
+        if FMEEnable
+            [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, bestMVSplit(2, :));
+        else
+            [bestMVSplit(3, :), bestMAESplit(1, 3), referenceBlockSplit(:, :, 3), residualBlockSplit(:, :, 3)] = fastMotionEstimation(refFrames, currentFrame, bottomLeftWidthPixelIndex, bottomLeftHeightPixelIndex, splitSize, bestMVSplit(2, :));
+        end
     end
 
     % bottom right
@@ -90,7 +106,11 @@ else
             [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = integerPixelFullSearch(refFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, r);
         end
     else
-        [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = fastMotionEstimation(refFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, bestMVSplit(3, :));
+        if FMEEnable
+            [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, bestMVSplit(3, :));
+        else
+            [bestMVSplit(4, :), bestMAESplit(1, 4), referenceBlockSplit(:, :, 4), residualBlockSplit(:, :, 4)] = fastMotionEstimation(refFrames, currentFrame, bottomRightWidthPixelIndex, bottomRightHeightPixelIndex, splitSize, bestMVSplit(3, :));
+        end
     end
 
     SADNonSplit = bestMAENonSplit * blockSize * blockSize;

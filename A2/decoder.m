@@ -26,8 +26,6 @@ end
 
 totalSplit = 0;
 
-FMEEnable = (FMEEnable && (~FastME));
-
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);
@@ -244,8 +242,14 @@ for currentFrameNum = 1:nFrame
                     else
                         refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
                         thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
-                        xMVMatrix = [xMVMatrix, left];
-                        yMVMatrix = [yMVMatrix, top];
+                    end
+
+                    xMVMatrix = [xMVMatrix, left];
+                    yMVMatrix = [yMVMatrix, top];
+                    if FMEEnable
+                        uMVMatrix = [uMVMatrix, MV(1,2)/2];
+                        vMVMatrix = [vMVMatrix, MV(1,1)/2];
+                    else
                         uMVMatrix = [uMVMatrix, MV(1,2)];
                         vMVMatrix = [vMVMatrix, MV(1,1)];
                     end
@@ -295,8 +299,14 @@ for currentFrameNum = 1:nFrame
                     else
                         thisBlock = int32(approximatedResidualBlockTopLeft) + ...
                             int32(refFrameTopLeft(top + MVTopLeft(1,1) : top + splitSize - 1 + MVTopLeft(1,1), left + MVTopLeft(1,2) : left + splitSize - 1 + MVTopLeft(1,2)));
-                        xMVMatrix = [xMVMatrix, left];
-                        yMVMatrix = [yMVMatrix, top];
+                    end
+
+                    xMVMatrix = [xMVMatrix, left];
+                    yMVMatrix = [yMVMatrix, top];
+                    if FMEEnable
+                        uMVMatrix = [uMVMatrix, MVTopLeft(1,2)/2];
+                        vMVMatrix = [vMVMatrix, MVTopLeft(1,1)/2];
+                    else
                         uMVMatrix = [uMVMatrix, MVTopLeft(1,2)];
                         vMVMatrix = [vMVMatrix, MVTopLeft(1,1)];
                     end
@@ -316,8 +326,14 @@ for currentFrameNum = 1:nFrame
                     else
                         thisBlock = int32(approximatedResidualBlockTopRight) + ...
                             int32(refFrameTopRight(top + MVTopRight(1,1) : top + splitSize - 1 + MVTopRight(1,1), left + splitSize + MVTopRight(1,2) : right + MVTopRight(1,2)));
-                        xMVMatrix = [xMVMatrix, left + splitSize];
-                        yMVMatrix = [yMVMatrix, top];
+                    end
+
+                    xMVMatrix = [xMVMatrix, left + splitSize];
+                    yMVMatrix = [yMVMatrix, top];
+                    if FMEEnable
+                        uMVMatrix = [uMVMatrix, MVTopRight(1,2)/2];
+                        vMVMatrix = [vMVMatrix, MVTopRight(1,1)/2];
+                    else
                         uMVMatrix = [uMVMatrix, MVTopRight(1,2)];
                         vMVMatrix = [vMVMatrix, MVTopRight(1,1)];
                     end
@@ -337,8 +353,14 @@ for currentFrameNum = 1:nFrame
                     else
                         thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
                             int32(refFrameBottomLeft(top + splitSize + MVBottomLeft(1,1) : bottom + MVBottomLeft(1,1), left + MVBottomLeft(1,2) : left + splitSize - 1 + MVBottomLeft(1,2)));
-                        xMVMatrix = [xMVMatrix, left];
-                        yMVMatrix = [yMVMatrix, top + splitSize];
+                    end
+
+                    xMVMatrix = [xMVMatrix, left];
+                    yMVMatrix = [yMVMatrix, top + splitSize];
+                    if FMEEnable
+                        uMVMatrix = [uMVMatrix, MVBottomLeft(1,2)/2];
+                        vMVMatrix = [vMVMatrix, MVBottomLeft(1,1)/2];
+                    else
                         uMVMatrix = [uMVMatrix, MVBottomLeft(1,2)];
                         vMVMatrix = [vMVMatrix, MVBottomLeft(1,1)];
                     end
@@ -358,8 +380,14 @@ for currentFrameNum = 1:nFrame
                     else
                         thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(top + splitSize + MVBottomRight(1,1) : bottom + MVBottomRight(1,1), left + splitSize + MVBottomRight(1,2) : right + MVBottomRight(1,2)));
-                        xMVMatrix = [xMVMatrix, left + splitSize];
-                        yMVMatrix = [yMVMatrix, top + splitSize];
+                    end
+
+                    xMVMatrix = [xMVMatrix, left + splitSize];
+                    yMVMatrix = [yMVMatrix, top + splitSize];
+                    if FMEEnable
+                        uMVMatrix = [uMVMatrix, MVBottomRight(1,2)/2];
+                        vMVMatrix = [vMVMatrix, MVBottomRight(1,1)/2];
+                    else
                         uMVMatrix = [uMVMatrix, MVBottomRight(1,2)];
                         vMVMatrix = [vMVMatrix, MVBottomRight(1,1)];
                     end
@@ -399,7 +427,7 @@ if visualizeRGB
     plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath, refFrameMatrix, blockSize, visualizeNRF);
 end
 
-if visualizeMM && FMEEnable == false
+if visualizeMM
     R = reconstructedY(1:height, 1:width, :);
     G = reconstructedY(1:height, 1:width, :);
     B = reconstructedY(1:height, 1:width, :);

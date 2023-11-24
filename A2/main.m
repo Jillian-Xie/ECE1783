@@ -2,12 +2,12 @@ clc; clear; close all;
 
 % config info
 yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = 3;
+nFrame = 4;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
 r = 4;
-QP = 1;
+QP = 4;
 I_Period = 10;
 Lambda = getLambda(QP);
 
@@ -16,10 +16,10 @@ VBSEnable = true;
 FMEEnable = true;
 FastME = true;
 
-visualizeVBS = VBSEnable && false;
-visualizeRGB = false;
-visualizeMM = (~FMEEnable) && false;
-visualizeNRF= false;
+visualizeVBS = VBSEnable && true;
+visualizeRGB = true; 
+visualizeMM = true;
+visualizeNRF= true;
 
 % encoder
 tic
