@@ -423,9 +423,7 @@ if visualizeVBS
     reconstructedY = addFramesToVisualizeVBS(reconstructedY, nFrame, width, height, blockSize, splits);
 end
 
-if visualizeRGB
-    plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath, refFrameMatrix, blockSize, visualizeNRF);
-end
+plotRGB(uint8(reconstructedY(1:height, 1:width, :)), nFrame, DecoderOutputPath, refFrameMatrix, blockSize, visualizeNRF, visualizeRGB);
 
 if visualizeMM
     R = reconstructedY(1:height, 1:width, :);
@@ -523,21 +521,23 @@ end
 block(height, 1:width) = 0;
 end
 
-function plotRGB(Y, nFrame, rgbOutputPath, refFrameMatrix, blockSize, visualizeNRF)
+function plotRGB(Y, nFrame, rgbOutputPath, refFrameMatrix, blockSize, visualizeNRF, visualizeRGB)
 height = size(Y,1);
 width = size(Y,2);
 R = Y;
 G = Y;
 B = Y;
 
+if visualizeRGB
 for i=1:nFrame
     im(:,:,1)=R(:,:,i);
     im(:,:,2)=G(:,:,i);
     im(:,:,3)=B(:,:,i);
     imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
 end
+end
 
-if sum(refFrameMatrix,"all") > 0 && visualizeNRF
+if visualizeNRF
 
     widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
     heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');

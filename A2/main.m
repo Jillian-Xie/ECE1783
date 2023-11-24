@@ -2,16 +2,16 @@ clc; clear; close all;
 
 % config info
 yuvInputFileName = 'foreman420_cif.yuv';
-nFrame = 4;
+nFrame = 3;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
 r = 4;
-QP = 4;
+QP = 0;
 I_Period = 10;
 Lambda = getLambda(QP);
 
-nRefFrames = 4;
+nRefFrames = 1;
 VBSEnable = true;
 FMEEnable = true;
 FastME = true;
