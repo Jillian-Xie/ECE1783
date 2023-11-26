@@ -529,12 +529,12 @@ G = Y;
 B = Y;
 
 if visualizeRGB
-for i=1:nFrame
-    im(:,:,1)=R(:,:,i);
-    im(:,:,2)=G(:,:,i);
-    im(:,:,3)=B(:,:,i);
-    imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
-end
+    for i=1:nFrame
+        im(:,:,1)=R(:,:,i);
+        im(:,:,2)=G(:,:,i);
+        im(:,:,3)=B(:,:,i);
+        imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
+    end
 end
 
 if visualizeNRF

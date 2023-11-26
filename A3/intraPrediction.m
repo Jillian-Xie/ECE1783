@@ -41,6 +41,7 @@ for heightBlockIndex = 1:heightBlockNum
         
         reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
     end
+    
 end
 
 MDiffRLE = RLE(MDiffsInt);
