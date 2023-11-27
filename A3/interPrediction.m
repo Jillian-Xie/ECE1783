@@ -1,4 +1,6 @@
-function [QTCCoeffsFrame, MDiffsFrame, splitFrame, reconstructedFrame] = interPrediction(referenceFrames, interpolateRefFrames, currentFrame, blockSize, r, QP, VBSEnable, FMEEnable, FastME, Lambda)
+function [QTCCoeffsFrame, MDiffsFrame, splitFrame, reconstructedFrame] = interPrediction( ...
+    referenceFrames, interpolateRefFrames, currentFrame, blockSize, r, QP, ...
+    VBSEnable, FMEEnable, FastME, Lambda)
 
 % return values:
 %     splitFrame is to be ignored if VBSEnable == false
