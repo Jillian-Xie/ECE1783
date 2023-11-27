@@ -19,6 +19,7 @@ splitInt = [];
 QPInt = [];
 
 actualBitSpent = int32(0);
+previousQP = 0; % assume QP=0 in the beginning
 
 for heightBlockIndex = 1:heightBlockNum
     previousMode = int32(0); % assume horizontal in the beginning
@@ -61,7 +62,9 @@ for heightBlockIndex = 1:heightBlockNum
             ) = reconstructedBlock;
     end
     
-    QPInt = [QPInt, currentQP];
+    % Differential encoding
+    QPInt = [QPInt, currentQP - previousQP];
+    previousQP = currentQP;
     actualBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
 
 end

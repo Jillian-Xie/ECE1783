@@ -28,7 +28,7 @@ totalSplit = 0;
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);
-    QPFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum);
+    QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum);
 
     MDiffFrame = expGolombDecoding(convertStringsToChars(MDiff));
 
@@ -56,11 +56,13 @@ for currentFrameNum = 1:nFrame
     if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
         % I frame
         MDiffRLEDecoded = reverseRLE(MDiffFrame, numNonSplitted + numSplitted * 4);
+        previousQP = 0;
 
         subBlockIndex = 1;
         for heightBlockIndex = 1:heightBlockNum
             previousMode = int32(0); % assume horizontal in the beginning
-            currentQP = QPFrame(heightBlockIndex);
+            currentQP = int32(QPDiffFrame(heightBlockIndex)) + int32(previousQP);
+            previousQP = currentQP;
             smallBlockQP = currentQP - 1;
             if smallBlockQP < 0
                 smallBlockQP = 0;
@@ -222,8 +224,10 @@ for currentFrameNum = 1:nFrame
         MDiffRLEDecoded = reverseRLE(MDiffFrame, numNonSplitted * 3 + numSplitted * 3 * 4);
 
         subBlockIndex = 1;
+
         for heightBlockIndex = 1:heightBlockNum
-            currentQP = QPFrame(heightBlockIndex);
+            currentQP = int32(QPDiffFrame(heightBlockIndex)) + int32(previousQP);
+            previousQP = currentQP;
             smallBlockQP = currentQP - 1;
             if smallBlockQP < 0
                 smallBlockQP = 0;
