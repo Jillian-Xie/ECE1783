@@ -2,7 +2,7 @@ clc; clear; close all;
 
 % config info
 yuvInputFileName = 'CIF.yuv';
-nFrame = 3;
+nFrame = 2;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
@@ -92,5 +92,7 @@ load('QPFrames.mat', 'QPFrames');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, reconstructedY);
+decoder(nFrame, width, height, blockSize, I_Period, VBSEnable, FMEEnable, ...
+    QTCCoeffs, MDiffs, splits, QPFrames, visualizeVBS, visualizeRGB, visualizeMM, ...
+    visualizeNRF, reconstructedY);
 toc

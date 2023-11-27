@@ -1,4 +1,7 @@
-function splitPercentage = decoder(nFrame, width, height, blockSize, QP, I_Period, VBSEnable, FMEEnable, FastME, QTCCoeffs, MDiffs, splits, visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, encoderReconstructedY)
+function splitPercentage = decoder(nFrame, width, height, blockSize, ...
+    I_Period, VBSEnable, FMEEnable, QTCCoeffs, MDiffs, splits, QPFrames, ...
+    visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, encoderReconstructedY)
+
 DecoderOutputPath = 'DecoderOutput\';
 reconstructedY = zeros(height, width, nFrame);
 
@@ -19,16 +22,13 @@ vCell = cell(nFrame);
 interpolateRefFrames(1:2*height-1, 1:2*width-1, nFrame) = int32(0);
 
 splitSize = blockSize / 2;
-smallBlockQP = QP - 1;
-if smallBlockQP < 0
-    smallBlockQP = 0;
-end
 
 totalSplit = 0;
 
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);
+    QPFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum);
 
     MDiffFrame = expGolombDecoding(convertStringsToChars(MDiff));
 
@@ -60,6 +60,11 @@ for currentFrameNum = 1:nFrame
         subBlockIndex = 1;
         for heightBlockIndex = 1:heightBlockNum
             previousMode = int32(0); % assume horizontal in the beginning
+            currentQP = QPFrame(heightBlockIndex);
+            smallBlockQP = currentQP - 1;
+            if smallBlockQP < 0
+                smallBlockQP = 0;
+            end
             for widthBlockIndex = 1:widthBlockNum
                 [verticalReference, horizontalReference] = getIntraPredictionReference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
                 top = int32((heightBlockIndex-1)*blockSize + 1);
@@ -69,7 +74,7 @@ for currentFrameNum = 1:nFrame
 
                 if VBSEnable == false || splitRLEDecoded(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) == false
                     % do not split this block
-                    approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, QP);
+                    approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, currentQP);
 
                     notSameMode = MDiffRLEDecoded(1, subBlockIndex); % 0 = no change, 1 = changed
                     mode = xor(previousMode, notSameMode);
@@ -218,6 +223,11 @@ for currentFrameNum = 1:nFrame
 
         subBlockIndex = 1;
         for heightBlockIndex = 1:heightBlockNum
+            currentQP = QPFrame(heightBlockIndex);
+            smallBlockQP = currentQP - 1;
+if smallBlockQP < 0
+    smallBlockQP = 0;
+end
             previousMV = int32([0, 0, 0]);
             for widthBlockIndex = 1:widthBlockNum
                 top = int32((heightBlockIndex-1)*blockSize + 1);
@@ -227,7 +237,7 @@ for currentFrameNum = 1:nFrame
 
                 if VBSEnable == false || splitRLEDecoded(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) == false
                     % do not split this block
-                    approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, QP);
+                    approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, currentQP);
 
                     MVDiff = MDiffRLEDecoded(1, subBlockIndex * 3 - 2 : subBlockIndex * 3);
                     MV = int32(previousMV) + int32(MVDiff);
@@ -529,12 +539,12 @@ G = Y;
 B = Y;
 
 if visualizeRGB
-for i=1:nFrame
-    im(:,:,1)=R(:,:,i);
-    im(:,:,2)=G(:,:,i);
-    im(:,:,3)=B(:,:,i);
-    imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
-end
+    for i=1:nFrame
+        im(:,:,1)=R(:,:,i);
+        im(:,:,2)=G(:,:,i);
+        im(:,:,3)=B(:,:,i);
+        imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
+    end
 end
 
 if visualizeNRF
