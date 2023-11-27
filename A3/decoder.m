@@ -225,9 +225,9 @@ for currentFrameNum = 1:nFrame
         for heightBlockIndex = 1:heightBlockNum
             currentQP = QPFrame(heightBlockIndex);
             smallBlockQP = currentQP - 1;
-if smallBlockQP < 0
-    smallBlockQP = 0;
-end
+            if smallBlockQP < 0
+                smallBlockQP = 0;
+            end
             previousMV = int32([0, 0, 0]);
             for widthBlockIndex = 1:widthBlockNum
                 top = int32((heightBlockIndex-1)*blockSize + 1);
