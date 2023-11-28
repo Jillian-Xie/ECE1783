@@ -19,7 +19,7 @@ splitInt = [];
 QPInt = [];
 
 actualBitSpent = int32(0);
-previousQP = 0; % assume QP=0 in the beginning
+previousQP = 6; % assume QP=6 in the beginning
 
 for heightBlockIndex = 1:heightBlockNum
     previousMode = int32(0); % assume horizontal in the beginning

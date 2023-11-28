@@ -19,6 +19,7 @@ splitInt = [];
 QPInt = [];
 
 actualBitSpent = int32(0);
+previousQP = 6; % assume QP=6 in the beginning
 
 for heightBlockIndex = 1:heightBlockNum
     % MV by default is [0,0,0] => [x, y, refFrame]
@@ -57,7 +58,8 @@ for heightBlockIndex = 1:heightBlockNum
             ) = reconstructedBlock;
     end
 
-    QPInt = [QPInt, currentQP];
+    QPInt = [QPInt, currentQP - previousQP];
+    previousQP = currentQP;
     actualBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
 
 end

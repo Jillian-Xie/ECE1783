@@ -56,7 +56,7 @@ for currentFrameNum = 1:nFrame
     if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
         % I frame
         MDiffRLEDecoded = reverseRLE(MDiffFrame, numNonSplitted + numSplitted * 4);
-        previousQP = 0;
+        previousQP = 6;
 
         subBlockIndex = 1;
         for heightBlockIndex = 1:heightBlockNum
@@ -224,6 +224,7 @@ for currentFrameNum = 1:nFrame
         MDiffRLEDecoded = reverseRLE(MDiffFrame, numNonSplitted * 3 + numSplitted * 3 * 4);
 
         subBlockIndex = 1;
+        previousQP = 6;
 
         for heightBlockIndex = 1:heightBlockNum
             currentQP = int32(QPDiffFrame(heightBlockIndex)) + int32(previousQP);

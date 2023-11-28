@@ -51,6 +51,11 @@ if checkFrameBoundary(originWidthPixelIndex, originHeightPixelIndex, 2*blockSize
 
         % Search the four neighbouring positions to the new origin in a + shape
         while(1)
+            %  Bounding the MVs to be within a range of +/-16 pixels around the collocated block
+            if abs(originHeightPixelIndex-refHeightPixelIndex) > 32 || ...
+                abs(originWidthPixelIndex-refWidthPixelIndex) > 32
+                break;
+            end
             originalBlock = refFrame(originHeightPixelIndex:2:originHeightPixelIndex+2*(blockSize-1), originWidthPixelIndex:2:originWidthPixelIndex+2*(blockSize-1));
             neighbours = {[originHeightPixelIndex-1, originWidthPixelIndex],...
                 [originHeightPixelIndex, originWidthPixelIndex-1],...
