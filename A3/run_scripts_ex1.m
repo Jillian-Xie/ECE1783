@@ -2,7 +2,7 @@ clc
 clear
 close all
  
-% report_ex1_createTable 
+report_ex1_createTable 
 
 
 clear 
