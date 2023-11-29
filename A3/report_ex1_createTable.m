@@ -83,16 +83,16 @@ P_QCIF = struct( ...
     );
 
 % CIF IFrame
-CIFStatistics{1} = getStatistics(I_CIF)
+CIFStatistics{1} = getStatistics(I_CIF);
 
 % CIF PFrame
-CIFStatistics{2} = getStatistics(P_CIF)
+CIFStatistics{2} = getStatistics(P_CIF);
 
 % QCIF IFrame
-QCIFStatistics{1} = getStatistics(I_QCIF)
+QCIFStatistics{1} = getStatistics(I_QCIF);
 
 % QCIF PFrame
-QCIFStatistics{2} = getStatistics(P_QCIF)
+QCIFStatistics{2} = getStatistics(P_QCIF);
 
 save('CIFStatistics');
 save('QCIFStatistics');

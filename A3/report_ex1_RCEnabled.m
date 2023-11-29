@@ -12,11 +12,11 @@ paramQCIF_1 = struct('yuvInputFileName', 'QCIF.yuv','nFrame', 21,'width', 176,'h
 paramQCIF_4 = struct('yuvInputFileName', 'QCIF.yuv','nFrame', 21,'width', 176,'height', 144,'blockSize', 16,'r', 16,'QPs', QPs,'I_Period', 4,'QP', 4,'nRefFrames', 1,'VBSEnable', true,'FMEEnable', true,'FastME', true,'visualizeVBS', false,'visualizeRGB', false,'visualizeMM', false,'visualizeNRF', false,'RCFlag', 1,'targetBR', 960000,'frameRate', 30);
 paramQCIF_21 = struct('yuvInputFileName', 'QCIF.yuv','nFrame', 21,'width', 176,'height', 144,'blockSize', 16,'r', 16,'QPs', QPs,'I_Period', 21,'QP', 4,'nRefFrames', 1,'VBSEnable', true,'FMEEnable', true,'FastME', true,'visualizeVBS', false,'visualizeRGB', false,'visualizeMM', false,'visualizeNRF', false,'RCFlag', 1,'targetBR', 960000,'frameRate', 30);
 
-runAndDrawCurves("", "PSNR", "FrameIndex", CIFStatistics, paramCIF_1, paramCIF_4, paramCIF_21);
-runAndDrawCurves("", "PSNR", "FrameIndex", QCIFStatistics, paramQCIF_1, paramQCIF_4, paramQCIF_21);
+runAndDrawCurves("PSNR vs FrameIndex (CIF.yuv)", "PSNR", "FrameIndex", CIFStatistics, paramCIF_1, paramCIF_4, paramCIF_21);
+runAndDrawCurves("PSNR vs FrameIndex (QCIF.yuv)","PSNR", "FrameIndex", QCIFStatistics, paramQCIF_1, paramQCIF_4, paramQCIF_21);
 
-runAndDrawCurves("", "Bitcount", "FrameIndex", CIFStatistics, paramCIF_1, paramCIF_4, paramCIF_21);
-runAndDrawCurves("", "Bitcount", "FrameIndex", QCIFStatistics, paramQCIF_1, paramQCIF_4, paramQCIF_21);
+runAndDrawCurves("Bitcount vs FrameIndex (CIF.yuv)", "Bitcount", "FrameIndex", CIFStatistics, paramCIF_1, paramCIF_4, paramCIF_21);
+runAndDrawCurves("Bitcount vs FrameIndex (QCIF.yuv)", "Bitcount", "FrameIndex", QCIFStatistics, paramQCIF_1, paramQCIF_4, paramQCIF_21);
 
 function runAndDrawCurves(fig_title, y_axis, x_axis, statistics, varargin) % varargin: parameters
 plotOutputPath = ['Plots' filesep];

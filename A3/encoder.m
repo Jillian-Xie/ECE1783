@@ -29,22 +29,29 @@ if ~exist(EncoderReconstructOutputPath,'dir')
     mkdir(EncoderReconstructOutputPath)
 end
 
-if RCFlag == 1
-    frameTotalBits = targetBR/frameRate;
-else
-    frameTotalBits = Inf;
-    statistics = [];
-    QPs = [];
-end
-
-actualBitSpent = frameTotalBits;
 
 for currentFrameNum = 1:nFrame
+    if RCFlag == 1
+        if rem(currentFrameNum,frameRate) == 1 || frameRate == 1
+            actualBitSpent = 0;
+            totalBits = targetBR;
+        end
+        totalBits = totalBits - actualBitSpent;
+        if frameRate == 1
+            frameTotalBits = totalBits;
+        else
+            frameTotalBits = int32(totalBits / (frameRate-rem(currentFrameNum,frameRate)+1));
+        end
+    else
+        frameTotalBits = Inf;
+        statistics = [];
+        QPs = [];
+    end
     if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
         % First frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, RCFlag, 2*frameTotalBits - actualBitSpent, QPs, statistics);
+            FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -59,7 +66,7 @@ for currentFrameNum = 1:nFrame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, RCFlag, ...
-            2*frameTotalBits - actualBitSpent, QPs, statistics);
+            frameTotalBits, QPs, statistics);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;

@@ -61,7 +61,6 @@ for heightBlockIndex = 1:heightBlockNum
     QPInt = [QPInt, currentQP - previousQP];
     previousQP = currentQP;
     actualBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
-
 end
 
 MDiffRLE = RLE(MDiffsInt);
