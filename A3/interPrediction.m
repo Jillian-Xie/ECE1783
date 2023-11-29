@@ -24,7 +24,7 @@ previousQP = 6; % assume QP=6 in the beginning
 for heightBlockIndex = 1:heightBlockNum
     % MV by default is [0,0,0] => [x, y, refFrame]
     previousMV = int32([0, 0, 0]);
-    if RCFlag == true
+    if RCFlag == 1
         budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
         currentQP = getCurrentQP(QPs, statistics{2}, int32(budget));
     else

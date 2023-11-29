@@ -16,7 +16,7 @@ VBSEnable = true;
 FMEEnable = true;
 FastME = true;
 
-RCFlag = true;
+RCFlag = 1;
 targetBR = 1140480; % bps
 frameRate = 30;
 
@@ -25,7 +25,7 @@ visualizeRGB = true;
 visualizeMM = true;
 visualizeNRF= true;
 
-if RCFlag
+if RCFlag == 1
     % statistics{1} -> IFrame  statistics{2} -> PFrame
     % load statistics from file
     load('statistics.mat', 'statistics');

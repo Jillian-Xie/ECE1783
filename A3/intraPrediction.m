@@ -23,7 +23,7 @@ previousQP = 6; % assume QP=6 in the beginning
 
 for heightBlockIndex = 1:heightBlockNum
     previousMode = int32(0); % assume horizontal in the beginning
-    if RCFlag == true
+    if RCFlag == 1
         budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
         currentQP = getCurrentQP(QPs, statistics{1}, int32(budget));
     else

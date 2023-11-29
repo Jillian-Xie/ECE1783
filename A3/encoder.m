@@ -29,7 +29,7 @@ if ~exist(EncoderReconstructOutputPath,'dir')
     mkdir(EncoderReconstructOutputPath)
 end
 
-if RCFlag == true
+if RCFlag == 1
     frameTotalBits = targetBR/frameRate;
 else
     frameTotalBits = Inf;
