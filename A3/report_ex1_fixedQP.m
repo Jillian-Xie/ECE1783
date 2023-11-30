@@ -1,6 +1,6 @@
 clc; clear; close all;
 
-QPs = [1 2 3 4 5 6 7 8 9 10 11];
+QPs = [0 1 2 3 4 5 6 7 8 9 10 11];
 load('CIFStatistics.mat', 'CIFStatistics');
 
 param = struct( ...
@@ -26,15 +26,16 @@ param = struct( ...
     'frameRate', 30 ...
     );
 
-QP = findClosestQP(param, CIFStatistics);
+% QP = findClosestQP(param, CIFStatistics);
 
-% QP = 4;
+QP = 4;
 
-param.QP = QP;
-param.RCFlag = 0;
+param_1 = param;
+param_1.QP = QP;
+param_1.RCFlag = 0;
 
-runAndDrawCurves("PSNR vs FrameIndex (CIF.yuv IPeriod=21)", "PSNR", "FrameIndex", param);
-runAndDrawCurves("Bitcount vs FrameIndex (CIF.yuv IPeriod=21)", "Bitcount", "FrameIndex", param);
+runAndDrawCurves("PSNR vs FrameIndex (CIF.yuv IPeriod=21)", "PSNR", "FrameIndex", param, param_1);
+runAndDrawCurves("Bitcount vs FrameIndex (CIF.yuv IPeriod=21)", "Bitcount", "FrameIndex", param, param_1);
 
 function QP = findClosestQP(param, statistics)
 
@@ -130,6 +131,7 @@ end
 
 function runAndDrawCurves(fig_title, y_axis, x_axis, varargin) % varargin: parameters
 plotOutputPath = ['Plots' filesep];
+load('CIFStatistics.mat', 'CIFStatistics');
 
 y(1:varargin{1}.nFrame, 1:(nargin-3)) = double(0.0);
 x(1:varargin{1}.nFrame, 1:(nargin-3)) = double(0.0);
@@ -141,12 +143,12 @@ if ~exist(plotOutputPath,'dir')
 end
 
 for i = 1:(nargin-3)
-    legends(i, :) = "QP = " + int2str(varargin{i}.QP);
+    legends(i, :) = "RCFlag = " + int2str(varargin{i}.RCFlag);
     reconstructedY = encoder(varargin{i}.yuvInputFileName, varargin{i}.nFrame, ...
         varargin{i}.width, varargin{i}.height, varargin{i}.blockSize, ...
         varargin{i}.r, varargin{i}.QP, varargin{i}.I_Period, varargin{i}.nRefFrames, ...
         varargin{i}.VBSEnable, varargin{i}.FMEEnable, varargin{i}.FastME, ...
-        0);
+        varargin{i}.RCFlag, varargin{i}.targetBR, varargin{i}.frameRate, varargin{i}.QPs, CIFStatistics);
 
     load('QTCCoeffs.mat', 'QTCCoeffs');
     load('MDiffs.mat', 'MDiffs');
