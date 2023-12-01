@@ -16,7 +16,7 @@ reconstructedFrame = int32(zeros(height, width));
 QTCCoeffsFrame = strings(0);
 MDiffsInt = [];
 splitInt = [];
-QPInt = [];
+QPInt = [1]; % encode the first bit as 0 to signify this is an P-frame
 
 actualBitSpent = int32(0);
 previousQP = 6; % assume QP=6 in the beginning

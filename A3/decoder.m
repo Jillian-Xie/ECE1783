@@ -1,5 +1,5 @@
 function splitPercentage = decoder(nFrame, width, height, blockSize, ...
-    I_Period, VBSEnable, FMEEnable, QTCCoeffs, MDiffs, splits, QPFrames, ...
+    VBSEnable, FMEEnable, QTCCoeffs, MDiffs, splits, QPFrames, ...
     visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, encoderReconstructedY)
 
 DecoderOutputPath = 'DecoderOutput\';
@@ -28,7 +28,9 @@ totalSplit = 0;
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);
-    QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum);
+    QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum + 1); % one more number for I/P frame info
+    notIFrame = QPDiffFrame(1, 1);
+    QPDiffFrame = QPDiffFrame(1,2:end);
 
     MDiffFrame = expGolombDecoding(convertStringsToChars(MDiff));
 
@@ -53,7 +55,7 @@ for currentFrameNum = 1:nFrame
 
     encoderReferenceFrame = encoderReconstructedY(:, :, currentFrameNum);
 
-    if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
+    if notIFrame == 0
         % I frame
         MDiffRLEDecoded = reverseRLE(MDiffFrame, numNonSplitted + numSplitted * 4);
         previousQP = 6;

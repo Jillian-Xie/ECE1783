@@ -28,7 +28,9 @@ visualizeNRF= true;
 if RCFlag == 1
     % statistics{1} -> IFrame  statistics{2} -> PFrame
     % load statistics from file
-    load('statistics.mat', 'statistics');
+    
+    statistics = load('CIFStatistics.mat', 'CIFStatistics');
+    statistics = statistics.CIFStatistics;
 
     % or get statistics
     % statistics = {};
@@ -89,7 +91,7 @@ load('QPFrames.mat', 'QPFrames');
 
 % decoder
 tic
-decoder(nFrame, width, height, blockSize, I_Period, VBSEnable, FMEEnable, ...
+decoder(nFrame, width, height, blockSize, VBSEnable, FMEEnable, ...
     QTCCoeffs, MDiffs, splits, QPFrames, visualizeVBS, visualizeRGB, visualizeMM, ...
     visualizeNRF, reconstructedY);
 toc
