@@ -26,10 +26,10 @@ for heightBlockIndex = 1:heightBlockNum
     previousMode = int32(0); % assume horizontal in the beginning
     if RCFlag == 1
         budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
-        currentQP = getCurrentQP(QPs, statistics{1}, int32(budget));
+        [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
     elseif RCFlag == 2
         budget = frameTotalBits * (double(perRowBitCountStatistics(1, heightBlockIndex)) / double(sum(perRowBitCountStatistics, 'all')));
-        currentQP = getCurrentQP(QPs, statistics{1}, int32(budget));
+        [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
     else
         currentQP = QP;
     end

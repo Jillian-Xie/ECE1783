@@ -57,25 +57,41 @@ for currentFrameNum = 1:nFrame
     if encoderRCFlagFrame == 2 && ~IFrame
         % P frame, do a encoding pass with constant QP (i.e. RCFlag = 0)
         tempRCFlag = 0;
-        tmepQP = getCurrentQP(QPs, statistics{2}, double(frameTotalBits) / double(heightBlockNum));
+        [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{2}, double(frameTotalBits) / double(heightBlockNum));
         [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount] = interPrediction( ...
                 referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
-                blockSize, r, tmepQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
+                blockSize, r, tempQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
                 frameTotalBits, QPs, statistics, []);
         
         actualBitSpentPerBlock = actualBitSpent / (widthBlockNum * heightBlockNum);
-        if actualBitSpentPerBlock > getSceneChangeThreshold(tmepQP)
+        if actualBitSpentPerBlock > getSceneChangeThreshold(tempQP)
             IFrame = true;
             % the prediction method changes between the two encoding passes, 
             % and hence, no other info from the first pass can be leveraged for the second pass
             encoderRCFlagFrame = 1;
         end
+        
+        % update statistics
+        interStatistics = statistics{2};
+        scaleFactor = double(actualBitSpent) / double(heightBlockNum) / double(interStatistics(tempQPIndex));
+        for i=1:length(interStatistics)
+           interStatistics(i) = int(double(interStatistics(i)) * scaleFactor);
+        end
+        statistics{2} = interStatistics;
     elseif encoderRCFlagFrame == 2 && IFrame
         tempRCFlag = 0;
-        tmepQP = getCurrentQP(QPs, statistics{1}, double(frameTotalBits) / double(heightBlockNum));
-        [~, ~, ~, ~, ~, ~, perRowBitCount] = intraPrediction( ...
-                paddingY(:,:,currentFrameNum), blockSize, tmepQP, VBSEnable, ...
+        [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{1}, double(frameTotalBits) / double(heightBlockNum));
+        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount] = intraPrediction( ...
+                paddingY(:,:,currentFrameNum), blockSize, tempQP, VBSEnable, ...
                 FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, []);
+        
+        % update statistics
+        intraStatistics = statistics{1};
+        scaleFactor = double(actualBitSpent) / double(heightBlockNum) / double(intraStatistics(tempQPIndex));
+        for i=1:length(intraStatistics)
+           intraStatistics(i) = double(intraStatistics(i)) * scaleFactor;
+        end
+        statistics{1} = intraStatistics;
     end
     
     if IFrame
