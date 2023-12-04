@@ -57,8 +57,13 @@ for currentFrameNum = 1:nFrame
     if encoderRCFlagFrame == 2 && ~IFrame
         % P frame, do a encoding pass with constant QP (i.e. RCFlag = 0)
         tempRCFlag = 0;
-        [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{2}, double(frameTotalBits) / double(heightBlockNum));
-        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount] = interPrediction( ...
+        if currentFrameNum == 1
+            [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{2}, double(frameTotalBits) / double(heightBlockNum));
+        else
+            tempQP = round(avgQP);
+            tempQPIndex = find(QPs == tempQP);
+        end
+        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~] = interPrediction( ...
                 referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
                 blockSize, r, tempQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
                 frameTotalBits, QPs, statistics, []);
@@ -75,13 +80,18 @@ for currentFrameNum = 1:nFrame
         interStatistics = statistics{2};
         scaleFactor = double(actualBitSpent) / double(heightBlockNum) / double(interStatistics(tempQPIndex));
         for i=1:length(interStatistics)
-           interStatistics(i) = int(double(interStatistics(i)) * scaleFactor);
+           interStatistics(i) = double(interStatistics(i)) * scaleFactor;
         end
         statistics{2} = interStatistics;
     elseif encoderRCFlagFrame == 2 && IFrame
         tempRCFlag = 0;
-        [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{1}, double(frameTotalBits) / double(heightBlockNum));
-        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount] = intraPrediction( ...
+        if currentFrameNum == 1
+            [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{1}, double(frameTotalBits) / double(heightBlockNum));
+        else
+            tempQP = round(avgQP);
+            tempQPIndex = find(QPs == tempQP);
+        end
+        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~] = intraPrediction( ...
                 paddingY(:,:,currentFrameNum), blockSize, tempQP, VBSEnable, ...
                 FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, []);
         
@@ -96,7 +106,7 @@ for currentFrameNum = 1:nFrame
     
     if IFrame
         % First frame needs to be I frame
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~] = intraPrediction( ...
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
             FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
@@ -110,7 +120,7 @@ for currentFrameNum = 1:nFrame
         referenceFrames = reconstructedFrame;
         interpolateReferenceFrames = interpolateRefFrames(:,:,currentFrameNum);
     else
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~] = interPrediction( ...
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
             frameTotalBits, QPs, statistics, perRowBitCount);

@@ -1,4 +1,4 @@
-function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount] = interPrediction( ...
+function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount, avgQP] = interPrediction( ...
             referenceFrames, interpolateRefFrames, currentFrame, blockSize, r, QP, ...
             VBSEnable, FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics, perRowBitCountStatistics)
 
@@ -21,6 +21,7 @@ perRowBitCount = [];
 
 actualBitSpent = int32(0);
 previousQP = 6; % assume QP=6 in the beginning
+avgQP = 0;
 
 for heightBlockIndex = 1:heightBlockNum
     % MV by default is [0,0,0] => [x, y, refFrame]
@@ -63,6 +64,7 @@ for heightBlockIndex = 1:heightBlockNum
     end
 
     QPInt = [QPInt, currentQP - previousQP];
+    avgQP = avgQP + currentQP;
     previousQP = currentQP;
     
     currentBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
@@ -79,5 +81,7 @@ splitFrame = expGolombEncoding(splitRLE);
 
 QPRLE = RLE(QPInt);
 QPFrame = expGolombEncoding(QPRLE);
+
+avgQP = avgQP / double(heightBlockNum);
 
 end
