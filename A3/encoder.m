@@ -29,9 +29,12 @@ if ~exist(EncoderReconstructOutputPath,'dir')
     mkdir(EncoderReconstructOutputPath)
 end
 
-
 for currentFrameNum = 1:nFrame
-    if RCFlag == 1
+    % copy the RCFlag from the user-specified one, so that we can modify
+    % that for this frame only
+    encoderRCFlagFrame = RCFlag;
+    
+    if encoderRCFlagFrame >= 1
         if rem(currentFrameNum,frameRate) == 1 || frameRate == 1
             actualBitSpent = 0;
             totalBits = targetBR;
@@ -47,11 +50,39 @@ for currentFrameNum = 1:nFrame
         statistics = [];
         QPs = [];
     end
-    if rem(currentFrameNum,I_Period) == 1 || I_Period == 1
+    
+    IFrame = rem(currentFrameNum,I_Period) == 1 || I_Period == 1;
+    
+    % first pass of multi-pass encoding
+    if encoderRCFlagFrame == 2 && ~IFrame
+        % P frame, do a encoding pass with constant QP (i.e. RCFlag = 0)
+        tempRCFlag = 0;
+        tmepQP = getCurrentQP(QPs, statistics{2}, double(frameTotalBits) / double(heightBlockNum));
+        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount] = interPrediction( ...
+                referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
+                blockSize, r, tmepQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
+                frameTotalBits, QPs, statistics, []);
+        
+        actualBitSpentPerBlock = actualBitSpent / (widthBlockNum * heightBlockNum);
+        if actualBitSpentPerBlock > getSceneChangeThreshold(tmepQP)
+            IFrame = true;
+            % the prediction method changes between the two encoding passes, 
+            % and hence, no other info from the first pass can be leveraged for the second pass
+            encoderRCFlagFrame = 1;
+        end
+    elseif encoderRCFlagFrame == 2 && IFrame
+        tempRCFlag = 0;
+        tmepQP = getCurrentQP(QPs, statistics{1}, double(frameTotalBits) / double(heightBlockNum));
+        [~, ~, ~, ~, ~, ~, perRowBitCount] = intraPrediction( ...
+                paddingY(:,:,currentFrameNum), blockSize, tmepQP, VBSEnable, ...
+                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, []);
+    end
+    
+    if IFrame
         % First frame needs to be I frame
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent] = intraPrediction( ...
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics);
+            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -63,10 +94,10 @@ for currentFrameNum = 1:nFrame
         referenceFrames = reconstructedFrame;
         interpolateReferenceFrames = interpolateRefFrames(:,:,currentFrameNum);
     else
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent] = interPrediction( ...
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
-            blockSize, r, QP, VBSEnable, FMEEnable, FastME, RCFlag, ...
-            frameTotalBits, QPs, statistics);
+            blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
+            frameTotalBits, QPs, statistics, perRowBitCount);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;

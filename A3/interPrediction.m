@@ -1,6 +1,6 @@
-function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent] = interPrediction( ...
+function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount] = interPrediction( ...
             referenceFrames, interpolateRefFrames, currentFrame, blockSize, r, QP, ...
-            VBSEnable, FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics)
+            VBSEnable, FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics, perRowBitCountStatistics)
 
 % return values:
 %     splitFrame is to be ignored if VBSEnable == false
@@ -17,6 +17,7 @@ QTCCoeffsFrame = strings(0);
 MDiffsInt = [];
 splitInt = [];
 QPInt = [1]; % encode the first bit as 0 to signify this is an P-frame
+perRowBitCount = [];
 
 actualBitSpent = int32(0);
 previousQP = 6; % assume QP=6 in the beginning
@@ -26,6 +27,9 @@ for heightBlockIndex = 1:heightBlockNum
     previousMV = int32([0, 0, 0]);
     if RCFlag == 1
         budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
+        currentQP = getCurrentQP(QPs, statistics{2}, int32(budget));
+    elseif RCFlag == 2
+        budget = frameTotalBits * (double(perRowBitCountStatistics(1, heightBlockIndex)) / double(sum(perRowBitCountStatistics, 'all')));
         currentQP = getCurrentQP(QPs, statistics{2}, int32(budget));
     else
         currentQP = QP;
@@ -60,7 +64,11 @@ for heightBlockIndex = 1:heightBlockNum
 
     QPInt = [QPInt, currentQP - previousQP];
     previousQP = currentQP;
-    actualBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
+    
+    currentBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
+    actualBitSpentRow = currentBitSpent - actualBitSpent;
+    actualBitSpent = currentBitSpent;
+    perRowBitCount = [perRowBitCount, actualBitSpentRow];
 end
 
 MDiffRLE = RLE(MDiffsInt);
