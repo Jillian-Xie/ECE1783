@@ -54,7 +54,7 @@ for currentFrameNum = 1:nFrame
     IFrame = rem(currentFrameNum,I_Period) == 1 || I_Period == 1;
     
     % first pass of multi-pass encoding
-    if encoderRCFlagFrame == 2 && ~IFrame
+    if encoderRCFlagFrame >= 2 && ~IFrame
         % P frame, do a encoding pass with constant QP (i.e. RCFlag = 0)
         tempRCFlag = 0;
         if currentFrameNum == 1
@@ -63,10 +63,10 @@ for currentFrameNum = 1:nFrame
             tempQP = round(avgQP);
             tempQPIndex = find(QPs == tempQP);
         end
-        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~] = interPrediction( ...
+        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~, splitDecision] = interPrediction( ...
                 referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
                 blockSize, r, tempQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
-                frameTotalBits, QPs, statistics, []);
+                frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum));
         
         actualBitSpentPerBlock = actualBitSpent / (widthBlockNum * heightBlockNum);
         if actualBitSpentPerBlock > getSceneChangeThreshold(tempQP)
@@ -83,7 +83,7 @@ for currentFrameNum = 1:nFrame
            interStatistics(i) = double(interStatistics(i)) * scaleFactor;
         end
         statistics{2} = interStatistics;
-    elseif encoderRCFlagFrame == 2 && IFrame
+    elseif encoderRCFlagFrame >= 2 && IFrame
         tempRCFlag = 0;
         if currentFrameNum == 1
             [tempQP, tempQPIndex] = getCurrentQP(QPs, statistics{1}, double(frameTotalBits) / double(heightBlockNum));
@@ -91,9 +91,9 @@ for currentFrameNum = 1:nFrame
             tempQP = round(avgQP);
             tempQPIndex = find(QPs == tempQP);
         end
-        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~] = intraPrediction( ...
+        [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~, splitDecision] = intraPrediction( ...
                 paddingY(:,:,currentFrameNum), blockSize, tempQP, VBSEnable, ...
-                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, []);
+                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum));
         
         % update statistics
         intraStatistics = statistics{1};
@@ -106,9 +106,9 @@ for currentFrameNum = 1:nFrame
     
     if IFrame
         % First frame needs to be I frame
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP] = intraPrediction( ...
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount);
+            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -120,10 +120,10 @@ for currentFrameNum = 1:nFrame
         referenceFrames = reconstructedFrame;
         interpolateReferenceFrames = interpolateRefFrames(:,:,currentFrameNum);
     else
-        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP] = interPrediction( ...
+        [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
-            frameTotalBits, QPs, statistics, perRowBitCount);
+            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;

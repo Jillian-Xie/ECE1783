@@ -1,6 +1,6 @@
-function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount, avgQP] = interPrediction( ...
+function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount, avgQP, splitInt] = interPrediction( ...
             referenceFrames, interpolateRefFrames, currentFrame, blockSize, r, QP, ...
-            VBSEnable, FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics, perRowBitCountStatistics)
+            VBSEnable, FMEEnable, FastME, RCFlag, frameTotalBits, QPs, statistics, perRowBitCountStatistics, previousPassSplitDecision)
 
 % return values:
 %     splitFrame is to be ignored if VBSEnable == false
@@ -29,7 +29,7 @@ for heightBlockIndex = 1:heightBlockNum
     if RCFlag == 1
         budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
         [currentQP, ~] = getCurrentQP(QPs, statistics{2}, int32(budget));
-    elseif RCFlag == 2
+    elseif RCFlag == 2 || RCFlag == 3
         budget = frameTotalBits * (double(perRowBitCountStatistics(1, heightBlockIndex)) / double(sum(perRowBitCountStatistics, 'all')));
         [currentQP, ~] = getCurrentQP(QPs, statistics{2}, int32(budget));
     else
@@ -41,7 +41,7 @@ for heightBlockIndex = 1:heightBlockNum
         
         [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock( ...
             referenceFrames, interpolateRefFrames, currentFrame, widthBlockIndex, heightBlockIndex, ...
-            r,blockSize, currentQP, VBSEnable, FMEEnable, FastME, previousMV, Lambda);
+            r,blockSize, currentQP, VBSEnable, FMEEnable, FastME, previousMV, Lambda, RCFlag, previousPassSplitDecision(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex));
 
         splitInt = [splitInt, split];
         QTCCoeffsFrame = [QTCCoeffsFrame, encodedQuantizedBlock];

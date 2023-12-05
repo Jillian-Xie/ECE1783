@@ -9,14 +9,14 @@ blockSize = 16;
 r = 4;
 QPs = [0 1 2 3 4 5 6 7 8 9 10 11];
 QP = 4;
-I_Period = 2;
+I_Period = 21;
 
 nRefFrames = 1;
 VBSEnable = true;
 FMEEnable = true;
 FastME = true;
 
-RCFlag = 2;
+RCFlag = 3;
 targetBR = 1140480; % bps
 frameRate = 30;
 

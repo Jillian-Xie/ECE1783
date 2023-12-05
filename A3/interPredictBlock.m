@@ -1,4 +1,5 @@
-function [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(refFrames, interpolateRefFrames, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, VBSEnable, FMEEnable, FastME, MVP, Lambda)
+function [split, bestMV, encodedQuantizedBlock, reconstructedBlock] = interPredictBlock(...
+    refFrames, interpolateRefFrames, currentFrame, widthBlockIndex, heightBlockIndex,r,blockSize, QP, VBSEnable, FMEEnable, FastME, MVP, Lambda, RCFlag, previousPassSplitDecision)
 
 % return values:
 %     split: boolean indicating whether we split this block
@@ -18,21 +19,23 @@ referenceBlockSplit = zeros(splitSize, splitSize, 4);
 residualBlockSplit = zeros(splitSize, splitSize, 4);
 reconstructedBlock = int32(zeros(blockSize, blockSize));
 
-if FastME == false
-    if FMEEnable
-        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fractionalPixelFullSearch(interpolateRefFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
+if ~(RCFlag == 3 && previousPassSplitDecision == true)
+    if FastME == false
+        if FMEEnable
+            [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fractionalPixelFullSearch(interpolateRefFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
+        else
+            [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
+        end
     else
-        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = integerPixelFullSearch(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, r);
-    end
-else
-    if FMEEnable
-        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
-    else
-        [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
+        if FMEEnable
+            [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fractionalFastMotionEstimation(interpolateRefFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
+        else
+            [bestMVNonSplit, bestMAENonSplit, referenceBlockNonSplit, residualBlockNonSplit] = fastMotionEstimation(refFrames, currentFrame, widthPixelIndex, heightPixelIndex, blockSize, MVP);
+        end
     end
 end
 
-if VBSEnable == false
+if VBSEnable == false || (RCFlag == 3 && previousPassSplitDecision == false)
     split = false;
     bestMV = int32(bestMVNonSplit);
     [encodedQuantizedBlock, quantizedBlock] = dctQuantizeAndEncode(residualBlockNonSplit, QP, blockSize);
@@ -113,14 +116,16 @@ else
         end
     end
 
-    SADNonSplit = bestMAENonSplit * blockSize * blockSize;
-    SADSplit = sum(bestMAESplit, "all") * splitSize * splitSize;
-
-    totalBitsNonSplit = 0;
+    if ~(RCFlag == 3 && previousPassSplitDecision == true)
+        SADNonSplit = bestMAENonSplit * blockSize * blockSize;
+        totalBitsNonSplit = 0;
+        [encodedQuantizedBlockNonSplit, quantizedBlockNonSplit] = dctQuantizeAndEncode(residualBlockNonSplit, QP, blockSize);
+        totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
+    
+        SADSplit = sum(bestMAESplit, "all") * splitSize * splitSize;
+    end
+    
     totalBitsSplit = 0;
-
-    [encodedQuantizedBlockNonSplit, quantizedBlockNonSplit] = dctQuantizeAndEncode(residualBlockNonSplit, QP, blockSize);
-    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
 
     smallBlockQP = QP - 1;
     if smallBlockQP < 0
@@ -135,22 +140,24 @@ else
         totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
     end
 
-    % for MVs
-    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(int32(bestMVNonSplit) - MVP)));
-    % note we need to transpose bestMVSplit first before reshaping to get
-    % row-wise reshaping
-    % reshape([1,2,3; 4,5,6]', 1, []) = [1 2 3 4 5 6]
-    bestMVSplitDifferentialEncoded = int32(bestMVSplit);
-    bestMVSplitDifferentialEncoded(1, :) = bestMVSplit(1, :) - MVP;
-    bestMVSplitDifferentialEncoded(2, :) = bestMVSplit(2, :) - bestMVSplit(1, :);
-    bestMVSplitDifferentialEncoded(3, :) = bestMVSplit(3, :) - bestMVSplit(3, :);
-    bestMVSplitDifferentialEncoded(4, :) = bestMVSplit(4, :) - bestMVSplit(4, :);
-    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(bestMVSplitDifferentialEncoded', 1, []))));
+    if ~(RCFlag == 3 && previousPassSplitDecision == true)
+        % for MVs
+        totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(int32(bestMVNonSplit) - MVP)));
+        % note we need to transpose bestMVSplit first before reshaping to get
+        % row-wise reshaping
+        % reshape([1,2,3; 4,5,6]', 1, []) = [1 2 3 4 5 6]
+        bestMVSplitDifferentialEncoded = int32(bestMVSplit);
+        bestMVSplitDifferentialEncoded(1, :) = bestMVSplit(1, :) - MVP;
+        bestMVSplitDifferentialEncoded(2, :) = bestMVSplit(2, :) - bestMVSplit(1, :);
+        bestMVSplitDifferentialEncoded(3, :) = bestMVSplit(3, :) - bestMVSplit(3, :);
+        bestMVSplitDifferentialEncoded(4, :) = bestMVSplit(4, :) - bestMVSplit(4, :);
+        totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(reshape(bestMVSplitDifferentialEncoded', 1, []))));
 
-    JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
-    Jsplit = SADSplit + Lambda * totalBitsSplit;
+        JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
+        Jsplit = SADSplit + Lambda * totalBitsSplit;
+    end
 
-    if Jsplit < JNonSplit
+    if (RCFlag == 3 && previousPassSplitDecision == true) || Jsplit < JNonSplit
         split = true;
         bestMV = bestMVSplit;
 

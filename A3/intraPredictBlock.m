@@ -1,4 +1,5 @@
-function [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalReference, horizontalReference, currentBlock, blockSize, QP, previousMode, VBSEnable, FMEEnable, FastME, Lambda)
+function [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(...
+    verticalReference, horizontalReference, currentBlock, blockSize, QP, previousMode, VBSEnable, FMEEnable, FastME, Lambda, RCFlag, previousPassSplitDecision)
 
 % return values: 
 %     split: boolean indicating whether we split this block 
@@ -21,33 +22,35 @@ residualBlockSplit = zeros(splitSize, splitSize, 4);
 modesSplit = zeros(1,4);
 reconstructedBlock = int32(zeros(blockSize, blockSize));
             
-for i=1:blockSize
-    HPredictionBlockNonSplit(:, i) = horizontalReference;
-    VPredictionBlockNonSplit(i, :) = verticalReference;
+if ~(RCFlag == 3 && previousPassSplitDecision == true)
+    for i=1:blockSize
+        HPredictionBlockNonSplit(:, i) = horizontalReference;
+        VPredictionBlockNonSplit(i, :) = verticalReference;
+    end
+
+    SAD_h=abs(sum(int32(HPredictionBlockNonSplit),'all') - sum(int32(currentBlock),'all'));
+    SAD_v=abs(sum(int32(VPredictionBlockNonSplit),'all') - sum(int32(currentBlock),'all'));
+
+    if(SAD_h > SAD_v) % decide mode by SAD
+        SADNonSplit = SAD_v;
+        modeNonSplit = int32(0);
+        predictedBlockNonSplit = VPredictionBlockNonSplit;
+    else
+        SADNonSplit = SAD_h;
+        modeNonSplit = int32(1);
+        predictedBlockNonSplit = HPredictionBlockNonSplit;
+    end
+
+    residualBlockNonSplit = int32(currentBlock) - int32(predictedBlockNonSplit);
+    [encodedQuantizedBlockNonSplit, quantizedBlockNonSplit] = dctQuantizeAndEncode(residualBlockNonSplit, QP, blockSize);
+    rescaledBlockNonSplit = rescaling(quantizedBlockNonSplit, QP);
+    approximatedResidualBlockNonSplit = idct2(rescaledBlockNonSplit);
+    reconstructedBlockNonSplit = int32(approximatedResidualBlockNonSplit) + int32(predictedBlockNonSplit);
 end
-
-SAD_h=abs(sum(int32(HPredictionBlockNonSplit),'all') - sum(int32(currentBlock),'all'));
-SAD_v=abs(sum(int32(VPredictionBlockNonSplit),'all') - sum(int32(currentBlock),'all'));
-
-if(SAD_h > SAD_v) % decide mode by SAD
-    SADNonSplit = SAD_v;
-    modeNonSplit = int32(0);
-    predictedBlockNonSplit = VPredictionBlockNonSplit;
-else
-    SADNonSplit = SAD_h;
-    modeNonSplit = int32(1);
-    predictedBlockNonSplit = HPredictionBlockNonSplit;
-end
-
-residualBlockNonSplit = int32(currentBlock) - int32(predictedBlockNonSplit);
-[encodedQuantizedBlockNonSplit, quantizedBlockNonSplit] = dctQuantizeAndEncode(residualBlockNonSplit, QP, blockSize);
-rescaledBlockNonSplit = rescaling(quantizedBlockNonSplit, QP);
-approximatedResidualBlockNonSplit = idct2(rescaledBlockNonSplit);
-reconstructedBlockNonSplit = int32(approximatedResidualBlockNonSplit) + int32(predictedBlockNonSplit);
 
 reconstructedBlockSplit = int32(zeros(blockSize, blockSize));
 
-if VBSEnable == false
+if VBSEnable == false || (RCFlag == 3 && previousPassSplitDecision == false)
     split = false;
     mode = modeNonSplit;
     encodedQuantizedBlock = encodedQuantizedBlockNonSplit;
@@ -161,30 +164,31 @@ else
     approximatedResidualBlock = idct2(rescaledBlock);
     reconstructedBlockSplit(splitSize+1:2*splitSize, splitSize+1:2*splitSize) = int32(approximatedResidualBlock) + int32(predictedBlockSplit(:, : ,4));
     
-    SADSplit = SADTopLeft + SADTopRight + SADBottomLeft + SADBottomRight;
+    if ~(RCFlag == 3 && previousPassSplitDecision == true)
+        SADSplit = SADTopLeft + SADTopRight + SADBottomLeft + SADBottomRight;
+        totalBitsSplit = 0;
 
-    totalBitsNonSplit = 0;
-    totalBitsSplit = 0;
+        for splitIndex = 1:4
+            totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
+        end
+        
+        totalBitsNonSplit = 0;
+        totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
+        totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(modeNonSplit - previousMode)));
     
-    for splitIndex = 1:4
-        totalBitsSplit = totalBitsSplit + strlength(encodedQuantizedBlockSplit(1, splitIndex));
+        % for modes
+        modesSplitDifferentialEncoded = modesSplit;
+        modesSplitDifferentialEncoded(1,1) = modesSplit(1,1) - previousMode;
+        modesSplitDifferentialEncoded(1,2) = modesSplit(1,2) - modesSplit(1,1);
+        modesSplitDifferentialEncoded(1,3) = modesSplit(1,3) - modesSplit(1,2);
+        modesSplitDifferentialEncoded(1,4) = modesSplit(1,4) - modesSplit(1,3);
+        totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(modesSplitDifferentialEncoded)));
+    
+        JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
+        Jsplit = SADSplit + Lambda * totalBitsSplit;
     end
-
-    totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
     
-    % for modes
-    totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(modeNonSplit - previousMode)));
-    modesSplitDifferentialEncoded = modesSplit;
-    modesSplitDifferentialEncoded(1,1) = modesSplit(1,1) - previousMode;
-    modesSplitDifferentialEncoded(1,2) = modesSplit(1,2) - modesSplit(1,1);
-    modesSplitDifferentialEncoded(1,3) = modesSplit(1,3) - modesSplit(1,2);
-    modesSplitDifferentialEncoded(1,4) = modesSplit(1,4) - modesSplit(1,3);
-    totalBitsSplit = totalBitsSplit + strlength(expGolombEncoding(RLE(modesSplitDifferentialEncoded)));
-    
-    JNonSplit = SADNonSplit + Lambda * totalBitsNonSplit;
-    Jsplit = SADSplit + Lambda * totalBitsSplit;
-    
-    if Jsplit < JNonSplit
+    if (RCFlag == 3 && previousPassSplitDecision == true) || Jsplit < JNonSplit
         split = true;
         mode = modesSplit;
         encodedQuantizedBlock = encodedQuantizedBlockSplit;
