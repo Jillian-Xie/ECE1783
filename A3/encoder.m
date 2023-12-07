@@ -1,6 +1,6 @@
 function reconstructedY = encoder(yuvInputFileName, nFrame, width, height, ...
     blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, ...
-    FastME, RCFlag, targetBR, frameRate, QPs, statistics)
+    FastME, RCFlag, targetBR, frameRate, QPs, statistics, parallelMode)
 
 [Y,~,~] = importYUV(yuvInputFileName, width, height ,nFrame);
 
@@ -30,6 +30,7 @@ if ~exist(EncoderReconstructOutputPath,'dir')
 end
 
 for currentFrameNum = 1:nFrame
+    avgQP = QP;
     % copy the RCFlag from the user-specified one, so that we can modify
     % that for this frame only
     encoderRCFlagFrame = RCFlag;
@@ -103,7 +104,70 @@ for currentFrameNum = 1:nFrame
         end
         statistics{1} = intraStatistics;
     end
-    
+
+    if parallelMode == 1
+        % Parallel processing for each block (Parallel Mode 1)
+        % Initialize cell arrays for storing parallel processing results
+        tempQTCCoeffsFrame = cell(heightBlockNum, widthBlockNum);
+        tempMDiffsFrame = cell(heightBlockNum, widthBlockNum); % Not used in Parallel Mode 1
+        tempSplitFrame = cell(heightBlockNum, widthBlockNum);
+        tempQPFrame = cell(heightBlockNum, widthBlockNum);
+        tempReconstructedBlockFrame = cell(heightBlockNum, widthBlockNum);
+
+        parfor blockIndex = 1:(widthBlockNum * heightBlockNum)
+            % Calculate block coordinates from linear index
+            [heightBlockIndex, widthBlockIndex] = ind2sub([heightBlockNum, widthBlockNum], blockIndex);
+
+            % Extract the current block from the frame
+            currentBlock = paddingY((heightBlockIndex-1)*blockSize+1:heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1:widthBlockIndex*blockSize);
+
+            % Perform DCT and quantization on the current block
+            transformedBlock = dct2(currentBlock);
+            quantizedBlock = quantize(transformedBlock, QP);
+
+            % Encode the quantized block
+            scanned = scanBlock(quantizedBlock, blockSize);
+            encodedRLE = RLE(scanned);
+            encodedQuantizedBlock = expGolombEncoding(encodedRLE);
+
+            % Reconstruct the block for the decoded frame (Inverse Quantization and Inverse DCT)
+            rescaledBlock = rescaling(quantizedBlock, QP);
+            reconstructedBlock = idct2(rescaledBlock);
+
+            % Store results in temporary cell arrays
+            tempQTCCoeffsFrame{blockIndex} = encodedQuantizedBlock;
+            tempMDiffsFrame{blockIndex} = zeros(1, size(encodedQuantizedBlock, 2)); % Set MDiffs to zeros
+            tempSplitFrame{blockIndex} = false; % Split decision is not relevant here
+            tempQPFrame{blockIndex} = QP;
+            tempReconstructedBlockFrame{blockIndex} = reconstructedBlock;
+        end
+
+        % Assign results from temporary cell arrays to main variables after parfor loop
+        for blockIndex = 1:(widthBlockNum * heightBlockNum)
+            [heightBlockIndex, widthBlockIndex] = ind2sub([heightBlockNum, widthBlockNum], blockIndex);
+            QTCCoeffsFrame{heightBlockIndex, widthBlockIndex} = tempQTCCoeffsFrame{blockIndex};
+            MDiffsFrame{heightBlockIndex, widthBlockIndex} = tempMDiffsFrame{blockIndex}; % Now filled with zeros
+            splitFrame{heightBlockIndex, widthBlockIndex} = tempSplitFrame{blockIndex};
+            QPFrame{heightBlockIndex, widthBlockIndex} = tempQPFrame{blockIndex};
+            reconstructedBlockFrame{heightBlockIndex, widthBlockIndex} = tempReconstructedBlockFrame{blockIndex};
+        end
+
+        % Combine the results from each block
+        reconstructedY(:, :, currentFrameNum) = combineBlocks(reconstructedBlockFrame);
+        QTCCoeffs(currentFrameNum, :) = [QTCCoeffsFrame{:}];
+
+        % Update MDiffs and splits for the current frame
+        numBlocks = widthBlockNum * heightBlockNum;
+        MDiffs(currentFrameNum, 1:numBlocks) = zeros(1, numBlocks);
+        splits(currentFrameNum, 1:numBlocks) = false(1, numBlocks);  % Set splits to false array
+
+        % Flatten QPFrame and assign to QPFrames
+        flattenedQP = horzcat(QPFrame{:});
+        QPFrames(currentFrameNum, 1:length(flattenedQP)) = num2str(flattenedQP);
+
+        visualizeReconstructedFrame(reconstructedY(:,:,currentFrameNum), currentFrameNum, EncoderReconstructOutputPath);
+    else
+    % Original non-parallel processing
     if IFrame
         % First frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
@@ -135,6 +199,7 @@ for currentFrameNum = 1:nFrame
         referenceFrames = updateRefFrames(reconstructedY, nRefFrames, currentFrameNum, I_Period);
         interpolateReferenceFrames = updateRefFrames(interpolateRefFrames, nRefFrames, currentFrameNum, I_Period);
     end
+    end
 
 end
 
@@ -154,4 +219,33 @@ function referenceFrame = updateRefFrames(reconsructedY, nRefFrames, currentFram
     for i=1:num
         referenceFrame(:,:,i) = reconsructedY(:,:,currentFrameNum-i+1);
     end
+end
+
+function combinedFrame = combineBlocks(reconstructedBlockFrame)
+    heightBlockNum = size(reconstructedBlockFrame, 1);
+    widthBlockNum = size(reconstructedBlockFrame, 2);
+    blockSize = size(reconstructedBlockFrame{1, 1}, 1);
+    
+    combinedFrame = zeros(heightBlockNum * blockSize, widthBlockNum * blockSize);
+    for i = 1:heightBlockNum
+        for j = 1:widthBlockNum
+            block = reconstructedBlockFrame{i, j};
+            combinedFrame((i-1)*blockSize+1:i*blockSize, (j-1)*blockSize+1:j*blockSize) = block;
+        end
+    end
+end
+
+function visualizeReconstructedFrame(reconstructedFrame, frameNum, outputPath)
+    % Create a figure
+    fig = figure('Visible', 'off');
+    imagesc(reconstructedFrame);
+    colormap gray;
+    axis image;
+    axis off;
+    title(sprintf('Reconstructed Frame %d', frameNum));
+    
+    % Save the figure as an image
+    filename = sprintf('%sReconstructed_Frame_%d.png', outputPath, frameNum);
+    saveas(fig, filename);
+    close(fig);
 end

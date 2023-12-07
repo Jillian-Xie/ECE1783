@@ -1,6 +1,6 @@
 function splitPercentage = decoder(nFrame, width, height, blockSize, ...
     VBSEnable, FMEEnable, QTCCoeffs, MDiffs, splits, QPFrames, ...
-    visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, encoderReconstructedY)
+    visualizeVBS, visualizeRGB, visualizeMM, visualizeNRF, encoderReconstructedY, parallelMode)
 
 DecoderOutputPath = 'DecoderOutput\';
 reconstructedY = zeros(height, width, nFrame);
@@ -28,10 +28,30 @@ totalSplit = 0;
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);
-    QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum + 1); % one more number for I/P frame info
-    notIFrame = QPDiffFrame(1, 1);
-    QPDiffFrame = QPDiffFrame(1,2:end);
 
+    % Conditional handling based on parallelMode
+    if parallelMode == 1
+        % Handle data types appropriately for parallel mode
+        QPFramesStr = QPFrames(currentFrameNum, :);
+        
+        % Convert to string array if it's a cell array
+        if iscell(QPFramesStr)
+            QPFramesStr = string(QPFramesStr{1}); 
+        end
+
+        % Convert to char array
+        QPFramesStr = char(QPFramesStr);
+        QPFramesStr = QPFramesStr(:)'; % Ensure it's a row vector
+        QPFramesStr = regexprep(QPFramesStr, '[^01]', ''); % Remove any character that is not 0 or 1
+
+        QPDiffFrame = reverseRLE(expGolombDecoding(QPFramesStr), heightBlockNum + 1);
+    else
+        % Original processing for non-parallel mode
+        QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum + 1);
+    end
+    
+    notIFrame = QPDiffFrame(1, 1);
+    QPDiffFrame = QPDiffFrame(1, 2:end);
     MDiffFrame = expGolombDecoding(convertStringsToChars(MDiff));
 
     xMVMatrix = [];
