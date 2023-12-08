@@ -29,6 +29,9 @@ if ~exist(EncoderReconstructOutputPath,'dir')
     mkdir(EncoderReconstructOutputPath)
 end
 
+perRowBitCount = [];
+splitDecision = zeros(1, widthBlockNum * heightBlockNum);
+
 for currentFrameNum = 1:nFrame
     % copy the RCFlag from the user-specified one, so that we can modify
     % that for this frame only
