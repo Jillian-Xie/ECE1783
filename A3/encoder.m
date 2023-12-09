@@ -122,7 +122,7 @@ for currentFrameNum = 1:nFrame
             currentBlock = paddingY((heightBlockIndex-1)*blockSize+1:heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1:widthBlockIndex*blockSize);
 
             % Perform DCT and quantization on the current block
-            transformedBlock = dct2(currentBlock);
+            transformedBlock = dct2(currentBlock - 128);
             quantizedBlock = quantize(transformedBlock, QP);
 
             % Encode the quantized block
@@ -132,12 +132,12 @@ for currentFrameNum = 1:nFrame
 
             % Reconstruct the block for the decoded frame (Inverse Quantization and Inverse DCT)
             rescaledBlock = rescaling(quantizedBlock, QP);
-            reconstructedBlock = idct2(rescaledBlock);
+            reconstructedBlock = idct2(rescaledBlock)+128;
 
             % Store results in temporary cell arrays
             tempQTCCoeffsFrame{blockIndex} = encodedQuantizedBlock;
             tempMDiffsFrame{blockIndex} = zeros(1, size(encodedQuantizedBlock, 2)); % Set MDiffs to zeros
-            tempSplitFrame{blockIndex} = false; % Split decision is not relevant here
+            tempSplitFrame{blockIndex} = '0';
             tempQPFrame{blockIndex} = QP;
             tempReconstructedBlockFrame{blockIndex} = reconstructedBlock;
         end
@@ -146,6 +146,7 @@ for currentFrameNum = 1:nFrame
         for blockIndex = 1:(widthBlockNum * heightBlockNum)
             [heightBlockIndex, widthBlockIndex] = ind2sub([heightBlockNum, widthBlockNum], blockIndex);
             QTCCoeffsFrame{heightBlockIndex, widthBlockIndex} = tempQTCCoeffsFrame{blockIndex};
+            
             MDiffsFrame{heightBlockIndex, widthBlockIndex} = tempMDiffsFrame{blockIndex}; % Now filled with zeros
             splitFrame{heightBlockIndex, widthBlockIndex} = tempSplitFrame{blockIndex};
             QPFrame{heightBlockIndex, widthBlockIndex} = tempQPFrame{blockIndex};
@@ -154,25 +155,71 @@ for currentFrameNum = 1:nFrame
 
         % Combine the results from each block
         reconstructedY(:, :, currentFrameNum) = combineBlocks(reconstructedBlockFrame);
-        QTCCoeffs(currentFrameNum, :) = [QTCCoeffsFrame{:}];
-
+        for ii = 1:heightBlockNum
+            for jj = 1:widthBlockNum
+                QTCCoeffs(currentFrameNum, (ii-1)*(widthBlockNum)+jj) = QTCCoeffsFrame{ii, jj};
+            end
+        end
         % Update MDiffs and splits for the current frame
         numBlocks = widthBlockNum * heightBlockNum;
         MDiffs(currentFrameNum, 1:numBlocks) = zeros(1, numBlocks);
-        splits(currentFrameNum, 1:numBlocks) = false(1, numBlocks);  % Set splits to false array
+        splits(currentFrameNum, 1:numBlocks) = '0';
 
         % Flatten QPFrame and assign to QPFrames
-        flattenedQP = horzcat(QPFrame{:});
-        QPFrames(currentFrameNum, 1:length(flattenedQP)) = num2str(flattenedQP);
+        flattenedQP = [1, ones(1,heightBlockNum)*QP];
+        flattenedQP = expGolombEncoding(RLE(flattenedQP));
+        QPFrames(currentFrameNum, 1) = flattenedQP;
 
-        visualizeReconstructedFrame(reconstructedY(:,:,currentFrameNum), currentFrameNum, EncoderReconstructOutputPath);
+        % elseif parallelMode == 3
+        % % Preallocate string matrices
+        % maxBlocksPerFrame = widthBlockNum * heightBlockNum;
+        % QTCCoeffs = strings(nFrame, maxBlocksPerFrame);
+        % MDiffs = strings(nFrame, maxBlocksPerFrame);
+        % splits = strings(nFrame, maxBlocksPerFrame);
+        % QPFrames = strings(nFrame, maxBlocksPerFrame);
+        % reconstructedY = zeros(size(paddingY, 1), size(paddingY, 2), nFrame);
+        % 
+        % % Parallel processing
+        % parfor pairIndex = 1:2:nFrame
+        %     for offset = 0:1
+        %         frameIndex = pairIndex + offset;
+        %         if frameIndex <= nFrame
+        %             IFrame = rem(frameIndex, I_Period) == 1 || I_Period == 1;
+        % 
+        %             if IFrame
+        %                 % Process I-Frame
+        %                 [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
+        %                     paddingY(:,:,frameIndex), blockSize, QP, VBSEnable, ...
+        %                     FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
+        %             else
+        %                 % Process P-Frame
+        %                 [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
+        %                     referenceFrames, interpolateReferenceFrames, paddingY(:,:,frameIndex), ...
+        %                     blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
+        %                     frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
+        %             end
+        % 
+        %             % Write to the specific slices of preallocated matrices
+        %             QTCCoeffs(frameIndex, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
+        %             MDiffs(frameIndex, 1) = MDiffsFrame;
+        %             splits(frameIndex, 1) = splitFrame;
+        %             QPFrames(frameIndex, 1) = QPFrame;
+        %             reconstructedY(:, :, frameIndex) = reconstructedFrame;
+        % 
+        %             % Update reference frames (if needed)
+        %             referenceFrames = updateRefFrames(reconstructedY, nRefFrames, frameIndex, I_Period);
+        %             interpolateReferenceFrames = updateRefFrames(interpolateRefFrames, nRefFrames, frameIndex, I_Period);
+        %         end
+        %     end
+        % end
+
     else
     % Original non-parallel processing
     if IFrame
         % First frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
+            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -187,7 +234,7 @@ for currentFrameNum = 1:nFrame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
-            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
+            frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -202,12 +249,13 @@ for currentFrameNum = 1:nFrame
     end
 
 end
-
+rgbOutputPath = 'EncoderReconstructOutput/'
+plotRGB(reconstructedY, nFrame, rgbOutputPath)
 % Store data in binary format
-save('QTCCoeffs.mat', 'QTCCoeffs');
-save('MDiffs.mat', 'MDiffs');
-save('splits.mat', 'splits');
-save('QPFrames.mat', 'QPFrames');
+ save('QTCCoeffs.mat', 'QTCCoeffs');
+ save('MDiffs.mat', 'MDiffs');
+ save('splits.mat', 'splits');
+ save('QPFrames.mat', 'QPFrames');
 
 end
 
@@ -235,17 +283,18 @@ function combinedFrame = combineBlocks(reconstructedBlockFrame)
     end
 end
 
-function visualizeReconstructedFrame(reconstructedFrame, frameNum, outputPath)
-    % Create a figure
-    fig = figure('Visible', 'off');
-    imagesc(reconstructedFrame);
-    colormap gray;
-    axis image;
-    axis off;
-    title(sprintf('Reconstructed Frame %d', frameNum));
-    
-    % Save the figure as an image
-    filename = sprintf('%sReconstructed_Frame_%d.png', outputPath, frameNum);
-    saveas(fig, filename);
-    close(fig);
+function plotRGB(Y, nFrame, rgbOutputPath)
+height = size(Y,1);
+width = size(Y,2);
+R = Y;
+G = Y;
+B = Y;
+
+for i=1:nFrame
+        im(:,:,1)=R(:,:,i);
+        im(:,:,2)=G(:,:,i);
+        im(:,:,3)=B(:,:,i);
+        imwrite(uint8(im),[rgbOutputPath, sprintf('%04d',i), '.png']);
 end
+end
+

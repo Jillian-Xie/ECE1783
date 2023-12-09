@@ -12,14 +12,14 @@ end
 widthBlockNum = idivide(uint32(width), uint32(blockSize), 'ceil');
 heightBlockNum = idivide(uint32(height), uint32(blockSize), 'ceil');
 
-refFrameMatrix = zeros(heightBlockNum, widthBlockNum, nFrame);
+refFrameMatrix = ones(heightBlockNum, widthBlockNum, nFrame)*128;
 
 xCell = cell(nFrame);
 yCell = cell(nFrame);
 uCell = cell(nFrame);
 vCell = cell(nFrame);
 
-interpolateRefFrames(1:2*height-1, 1:2*width-1, nFrame) = int32(0);
+interpolateRefFrames(1:2*height-1, 1:2*width-1, nFrame) = int32(128);
 
 splitSize = blockSize / 2;
 
@@ -45,6 +45,7 @@ for currentFrameNum = 1:nFrame
         QPFramesStr = regexprep(QPFramesStr, '[^01]', ''); % Remove any character that is not 0 or 1
 
         QPDiffFrame = reverseRLE(expGolombDecoding(QPFramesStr), heightBlockNum + 1);
+        QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum + 1);
     else
         % Original processing for non-parallel mode
         QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrames(currentFrameNum, :))), heightBlockNum + 1);
@@ -60,12 +61,16 @@ for currentFrameNum = 1:nFrame
     vMVMatrix = [];
 
     if VBSEnable
-        splitSequence = splits(currentFrameNum, 1);
-        splitFrame = expGolombDecoding(convertStringsToChars(splitSequence));
-        splitRLEDecoded = reverseRLE(splitFrame, widthBlockNum * heightBlockNum);
-        [numSplitted, numNonSplitted] = countSplitted(splitRLEDecoded, widthBlockNum, heightBlockNum);
-
-        totalSplit = totalSplit + numSplitted;
+        if parallelMode == 1
+            numSplitted = 0;
+            numNonSplitted = widthBlockNum * heightBlockNum;
+        else
+            splitSequence = splits(currentFrameNum, 1);
+            splitFrame = expGolombDecoding(convertStringsToChars(splitSequence));
+            splitRLEDecoded = reverseRLE(splitFrame, widthBlockNum * heightBlockNum);
+            [numSplitted, numNonSplitted] = countSplitted(splitRLEDecoded, widthBlockNum, heightBlockNum);
+            totalSplit = totalSplit + numSplitted;
+        end
     else
         numSplitted = 0;
         numNonSplitted = widthBlockNum * heightBlockNum;
@@ -249,7 +254,11 @@ for currentFrameNum = 1:nFrame
         previousQP = 6;
 
         for heightBlockIndex = 1:heightBlockNum
-            currentQP = int32(QPDiffFrame(heightBlockIndex)) + int32(previousQP);
+            if parallelMode == 1
+                currentQP = int32(QPDiffFrame(heightBlockIndex));
+            else
+                currentQP = int32(QPDiffFrame(heightBlockIndex)) + int32(previousQP);
+            end
             previousQP = currentQP;
             smallBlockQP = currentQP - 1;
             if smallBlockQP < 0
@@ -262,7 +271,7 @@ for currentFrameNum = 1:nFrame
                 left = int32((widthBlockIndex-1) * blockSize + 1);
                 right = int32(widthBlockIndex * blockSize);
 
-                if VBSEnable == false || splitRLEDecoded(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) == false
+                if parallelMode == 1 || VBSEnable == false || splitRLEDecoded(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex) == false
                     % do not split this block
                     approximatedResidualBlock = decodeQTCCoeff(QTCCoeff, subBlockIndex, blockSize, currentQP);
 
@@ -274,10 +283,19 @@ for currentFrameNum = 1:nFrame
                     previousMV = MV;
 
                     if FMEEnable
-                        refFrame = interpolateRefFrames(:,:,currentFrameNum-1-MV(1,3));
-                        thisBlock = int32(approximatedResidualBlock) + int32(refFrame(2*top-1 + MV(1,1) :2: 2*top-1 + MV(1,1)+2*(blockSize-1), 2*left-1 + MV(1,2) :2: 2*left-1 + MV(1,2)+2*(blockSize-1)));
+                        if parallelMode ==1
+                            refFrame(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+                            thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
+                        else
+                            refFrame = interpolateRefFrames(:,:,currentFrameNum-1-MV(1,3));
+                            thisBlock = int32(approximatedResidualBlock) + int32(refFrame(2*top-1 + MV(1,1) :2: 2*top-1 + MV(1,1)+2*(blockSize-1), 2*left-1 + MV(1,2) :2: 2*left-1 + MV(1,2)+2*(blockSize-1)));
+                        end
                     else
-                        refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
+                        if parallelMode ==1
+                            refFrame(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+                        else
+                            refFrame = reconstructedY(:,:,currentFrameNum-1-MV(1,3));
+                        end
                         thisBlock = int32(approximatedResidualBlock) + int32(refFrame(top + MV(1,1) : bottom + MV(1,1), left + MV(1,2) : right + MV(1,2)));
                     end
 
@@ -318,21 +336,36 @@ for currentFrameNum = 1:nFrame
                     previousMV = MVBottomRight;
 
                     if FMEEnable
-                        refFrameTopLeft = interpolateRefFrames(:,:,currentFrameNum-1-MVTopLeft(1,3));
-                        refFrameTopRight = interpolateRefFrames(:,:,currentFrameNum-1-MVTopRight(1,3));
-                        refFrameBottomLeft = interpolateRefFrames(:,:,currentFrameNum-1-MVBottomLeft(1,3));
-                        refFrameBottomRight = interpolateRefFrames(:,:,currentFrameNum-1-MVBottomRight(1,3));
+                        if parallelMode == 1
+                            FMEEnable = false;
+                        else
+                            refFrameTopLeft = interpolateRefFrames(:,:,currentFrameNum-1-MVTopLeft(1,3));
+                            refFrameTopRight = interpolateRefFrames(:,:,currentFrameNum-1-MVTopRight(1,3));
+                            refFrameBottomLeft = interpolateRefFrames(:,:,currentFrameNum-1-MVBottomLeft(1,3));
+                            refFrameBottomRight = interpolateRefFrames(:,:,currentFrameNum-1-MVBottomRight(1,3));
+                        end
                     else
-                        refFrameTopLeft = reconstructedY(:,:,currentFrameNum-1-MVTopLeft(1,3));
-                        refFrameTopRight = reconstructedY(:,:,currentFrameNum-1-MVTopRight(1,3));
-                        refFrameBottomLeft = reconstructedY(:,:,currentFrameNum-1-MVBottomLeft(1,3));
-                        refFrameBottomRight = reconstructedY(:,:,currentFrameNum-1-MVBottomRight(1,3));
+                        if parallelMode == 1
+                            refFrameTopLeft(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+                            refFrameTopRight(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+                            refFrameBottomLeft(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+                            refFrameBottomRight(1:heightBlockNum*blockSize,1:widthBlockNum*blockSize) = int32(128);
+                        else
+                            refFrameTopLeft = reconstructedY(:,:,currentFrameNum-1-MVTopLeft(1,3));
+                            refFrameTopRight = reconstructedY(:,:,currentFrameNum-1-MVTopRight(1,3));
+                            refFrameBottomLeft = reconstructedY(:,:,currentFrameNum-1-MVBottomLeft(1,3));
+                            refFrameBottomRight = reconstructedY(:,:,currentFrameNum-1-MVBottomRight(1,3));
+                        end
                     end
 
                     % top left
                     if FMEEnable
-                        thisBlock = int32(approximatedResidualBlockTopLeft) + ...
-                            int32(refFrameTopLeft(2*top-1 + MVTopLeft(1,1) :2: 2*top-1 + MVTopLeft(1,1)+2*(splitSize-1), 2*left-1 + MVTopLeft(1,2) :2: 2*left-1 + MVTopLeft(1,2)+2*(splitSize-1)));
+                        if parallelMode == 1
+                            FMEEnable = false;
+                        else
+                            thisBlock = int32(approximatedResidualBlockTopLeft) + ...
+                                int32(refFrameTopLeft(2*top-1 + MVTopLeft(1,1) :2: 2*top-1 + MVTopLeft(1,1)+2*(splitSize-1), 2*left-1 + MVTopLeft(1,2) :2: 2*left-1 + MVTopLeft(1,2)+2*(splitSize-1)));
+                        end
                     else
                         thisBlock = int32(approximatedResidualBlockTopLeft) + ...
                             int32(refFrameTopLeft(top + MVTopLeft(1,1) : top + splitSize - 1 + MVTopLeft(1,1), left + MVTopLeft(1,2) : left + splitSize - 1 + MVTopLeft(1,2)));
@@ -358,8 +391,12 @@ for currentFrameNum = 1:nFrame
                     % top right
 
                     if FMEEnable
-                        thisBlock = int32(approximatedResidualBlockTopRight) + ...
-                            int32(refFrameTopRight(2*top-1 + MVTopRight(1,1) :2: 2*top-1 + MVTopRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVTopRight(1,2) :2: 2*(left+splitSize)-1 + MVTopRight(1,2)+2*(splitSize-1)));
+                        if parallelMode == 1
+                            FMEEnable = false;
+                        else
+                            thisBlock = int32(approximatedResidualBlockTopRight) + ...
+                                int32(refFrameTopRight(2*top-1 + MVTopRight(1,1) :2: 2*top-1 + MVTopRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVTopRight(1,2) :2: 2*(left+splitSize)-1 + MVTopRight(1,2)+2*(splitSize-1)));
+                        end
                     else
                         thisBlock = int32(approximatedResidualBlockTopRight) + ...
                             int32(refFrameTopRight(top + MVTopRight(1,1) : top + splitSize - 1 + MVTopRight(1,1), left + splitSize + MVTopRight(1,2) : right + MVTopRight(1,2)));
@@ -385,8 +422,12 @@ for currentFrameNum = 1:nFrame
                     % bottom left
 
                     if FMEEnable
-                        thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
-                            int32(refFrameBottomLeft(2*(top+splitSize)-1 + MVBottomLeft(1,1) :2: 2*(top+splitSize)-1 + MVBottomLeft(1,1)+2*(splitSize-1), 2*left-1 + MVBottomLeft(1,2) :2: 2*left-1 + MVBottomLeft(1,2)+2*(splitSize-1)));
+                        if parallelMode == 1
+                            FMEEnable = false;
+                        else
+                            thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
+                                int32(refFrameBottomLeft(2*(top+splitSize)-1 + MVBottomLeft(1,1) :2: 2*(top+splitSize)-1 + MVBottomLeft(1,1)+2*(splitSize-1), 2*left-1 + MVBottomLeft(1,2) :2: 2*left-1 + MVBottomLeft(1,2)+2*(splitSize-1)));
+                        end
                     else
                         thisBlock = int32(approximatedResidualBlockBottomLeft) + ...
                             int32(refFrameBottomLeft(top + splitSize + MVBottomLeft(1,1) : bottom + MVBottomLeft(1,1), left + MVBottomLeft(1,2) : left + splitSize - 1 + MVBottomLeft(1,2)));
@@ -412,8 +453,12 @@ for currentFrameNum = 1:nFrame
                     % bottom right
 
                     if FMEEnable
-                        thisBlock = int32(approximatedResidualBlockBottomRight) + ...
+                        if parallelMode == 1
+                            FMEEnable = false;
+                        else
+                            thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(2*(top+splitSize)-1 + MVBottomRight(1,1) :2: 2*(top+splitSize)-1 + MVBottomRight(1,1)+2*(splitSize-1), 2*(left+splitSize)-1 + MVBottomRight(1,2) :2: 2*(left+splitSize)-1 + MVBottomRight(1,2)+2*(splitSize-1)));
+                        end
                     else
                         thisBlock = int32(approximatedResidualBlockBottomRight) + ...
                             int32(refFrameBottomRight(top + splitSize + MVBottomRight(1,1) : bottom + MVBottomRight(1,1), left + splitSize + MVBottomRight(1,2) : right + MVBottomRight(1,2)));
@@ -444,7 +489,11 @@ for currentFrameNum = 1:nFrame
     reconstructedY(:,:,currentFrameNum) = reconstructedFrame;
 
     if FMEEnable == true
-        interpolateRefFrames(:,:,currentFrameNum) = interpolateFrames(reconstructedY(:,:,currentFrameNum));
+        if parallelMode == 1
+            FMEEnable = false;
+        else
+            interpolateRefFrames(:,:,currentFrameNum) = interpolateFrames(reconstructedY(:,:,currentFrameNum));
+        end
     end
 
     xCell{currentFrameNum} = xMVMatrix;
