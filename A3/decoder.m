@@ -25,6 +25,28 @@ splitSize = blockSize / 2;
 
 totalSplit = 0;
 
+if parallelMode == 3
+    % Parallel processing
+    spmd(2)
+        framesToDecode = labindex:2:nFrame;
+        for currentFrameNum = framesToDecode
+            % Insert the frame decoding logic here
+            % Decoding of QTCCoeffs, MDiffs, splits, QPFrames, etc.
+            QTCCoeff = QTCCoeffs(currentFrameNum, :);
+            MDiff = MDiffs(currentFrameNum, 1);
+            QPDiffFrame = decodeQPFrame(QPFrames(currentFrameNum, :), heightBlockNum);
+            MDiffFrame = expGolombDecoding(convertStringsToChars(MDiff));
+            splitFrame = decodeSplitFrame(splits(currentFrameNum, 1), widthBlockNum, heightBlockNum, VBSEnable);
+
+            % Additional decoding steps for each frame
+            % E.g., reconstructing the frame based on the decoded data
+            reconstructedY(:, :, currentFrameNum) = reconstructFrame(QTCCoeff, MDiffFrame, splitFrame, QPDiffFrame, widthBlockNum, heightBlockNum, blockSize, VBSEnable, FMEEnable);
+        end
+    end
+    % Combine results from parallel workers
+    reconstructedY = combineParallelResults(codistributed(reconstructedY));
+end
+
 for currentFrameNum = 1:nFrame
     QTCCoeff = QTCCoeffs(currentFrameNum, :);
     MDiff = MDiffs(currentFrameNum, 1);
@@ -666,4 +688,79 @@ for i=1:nFrame
     fwrite(fid,uint8(Y(:,:,i)'),'uchar');
 end
 fclose(fid);
+end
+
+function QPDiffFrame = decodeQPFrame(QPFrame, heightBlockNum)
+    % Decode QP frame
+    QPDiffFrame = reverseRLE(expGolombDecoding(convertStringsToChars(QPFrame)), heightBlockNum + 1);
+    QPDiffFrame = QPDiffFrame(1, 2:end); % Remove first bit (I/P frame indicator)
+end
+
+function splitFrame = decodeSplitFrame(splitSequence, widthBlockNum, heightBlockNum, VBSEnable)
+    if VBSEnable
+        splitFrame = expGolombDecoding(convertStringsToChars(splitSequence));
+        splitFrame = reverseRLE(splitFrame, widthBlockNum * heightBlockNum);
+    else
+        splitFrame = zeros(1, widthBlockNum * heightBlockNum);
+    end
+end
+
+function reconstructedY = combineParallelResults(reconstructedYDist)
+    reconstructedY = gather(reconstructedYDist);
+end
+
+function reconstructedFrame = reconstructFrame(QTCCoeff, MDiffFrame, splitFrame, QPDiffFrame, widthBlockNum, heightBlockNum, blockSize, VBSEnable, FMEEnable)
+    % Initialize the reconstructed frame
+    reconstructedFrame = int32(zeros(heightBlockNum * blockSize, widthBlockNum * blockSize));
+    subBlockIndex = 1; % Index to track the sub-block within QTCCoeff
+    previousQP = 6; % Initial QP value
+
+    for heightBlockIndex = 1:heightBlockNum
+        currentQP = int32(QPDiffFrame(heightBlockIndex)) + int32(previousQP);
+        previousQP = currentQP; % Update QP for next block
+
+        for widthBlockIndex = 1:widthBlockNum
+            % Calculate the position of the current block
+            top = int32((heightBlockIndex-1)*blockSize + 1);
+            bottom = int32(heightBlockIndex * blockSize);
+            left = int32((widthBlockIndex-1) * blockSize + 1);
+            right = int32(widthBlockIndex * blockSize);
+
+            % Process block based on split decision
+            if VBSEnable && splitFrame(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex)
+                % Handle split blocks
+                [reconstructedBlock, subBlockIndex] = processSplitBlock(QTCCoeff, MDiffFrame, subBlockIndex, blockSize, currentQP, top, left);
+            else
+                % Handle non-split blocks
+                [reconstructedBlock, subBlockIndex] = processNonSplitBlock(QTCCoeff, MDiffFrame, subBlockIndex, blockSize, currentQP);
+            end
+
+            % Update the reconstructed frame with the processed block
+            reconstructedFrame(top:bottom, left:right) = reconstructedBlock;
+        end
+    end
+end
+
+function [reconstructedBlock, subBlockIndex] = processSplitBlock(QTCCoeff, MDiffFrame, subBlockIndex, blockSize, currentQP, top, left)
+    % Function to process split block
+    splitSize = blockSize / 2;
+    % ... Implement logic for processing split blocks ...
+    % Update subBlockIndex accordingly
+    % Return the reconstructed block and updated subBlockIndex
+end
+
+function [reconstructedBlock, subBlockIndex] = processNonSplitBlock(QTCCoeff, MDiffFrame, subBlockIndex, blockSize, currentQP)
+    % Function to process non-split block
+    % Decode the QTCCoeff for the current block
+    encodedQuantizedBlock = QTCCoeff(1, subBlockIndex);
+    approximatedResidualBlock = decodeQTCCoeff(encodedQuantizedBlock, blockSize, currentQP);
+
+    % Implement logic for processing non-split blocks (e.g., IDCT)
+    reconstructedBlock = idct2(approximatedResidualBlock);
+    
+    % Increment subBlockIndex
+    subBlockIndex = subBlockIndex + 1;
+
+    % Return the reconstructed block and updated subBlockIndex
+    return
 end

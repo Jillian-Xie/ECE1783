@@ -67,7 +67,7 @@ for currentFrameNum = 1:nFrame
         [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~, splitDecision] = interPrediction( ...
                 referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
                 blockSize, r, tempQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
-                frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum));
+                frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum), parallelMode);
         
         actualBitSpentPerBlock = actualBitSpent / (widthBlockNum * heightBlockNum);
         if actualBitSpentPerBlock > getSceneChangeThreshold(tempQP)
@@ -94,7 +94,7 @@ for currentFrameNum = 1:nFrame
         end
         [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~, splitDecision] = intraPrediction( ...
                 paddingY(:,:,currentFrameNum), blockSize, tempQP, VBSEnable, ...
-                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum));
+                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum), parallelMode);
         
         % update statistics
         intraStatistics = statistics{1};
@@ -170,48 +170,51 @@ for currentFrameNum = 1:nFrame
         flattenedQP = expGolombEncoding(RLE(flattenedQP));
         QPFrames(currentFrameNum, 1) = flattenedQP;
 
-        % elseif parallelMode == 3
-        % % Preallocate string matrices
-        % maxBlocksPerFrame = widthBlockNum * heightBlockNum;
-        % QTCCoeffs = strings(nFrame, maxBlocksPerFrame);
-        % MDiffs = strings(nFrame, maxBlocksPerFrame);
-        % splits = strings(nFrame, maxBlocksPerFrame);
-        % QPFrames = strings(nFrame, maxBlocksPerFrame);
-        % reconstructedY = zeros(size(paddingY, 1), size(paddingY, 2), nFrame);
-        % 
-        % % Parallel processing
-        % parfor pairIndex = 1:2:nFrame
-        %     for offset = 0:1
-        %         frameIndex = pairIndex + offset;
-        %         if frameIndex <= nFrame
-        %             IFrame = rem(frameIndex, I_Period) == 1 || I_Period == 1;
-        % 
-        %             if IFrame
-        %                 % Process I-Frame
-        %                 [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
-        %                     paddingY(:,:,frameIndex), blockSize, QP, VBSEnable, ...
-        %                     FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
-        %             else
-        %                 % Process P-Frame
-        %                 [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
-        %                     referenceFrames, interpolateReferenceFrames, paddingY(:,:,frameIndex), ...
-        %                     blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
-        %                     frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
-        %             end
-        % 
-        %             % Write to the specific slices of preallocated matrices
-        %             QTCCoeffs(frameIndex, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
-        %             MDiffs(frameIndex, 1) = MDiffsFrame;
-        %             splits(frameIndex, 1) = splitFrame;
-        %             QPFrames(frameIndex, 1) = QPFrame;
-        %             reconstructedY(:, :, frameIndex) = reconstructedFrame;
-        % 
-        %             % Update reference frames (if needed)
-        %             referenceFrames = updateRefFrames(reconstructedY, nRefFrames, frameIndex, I_Period);
-        %             interpolateReferenceFrames = updateRefFrames(interpolateRefFrames, nRefFrames, frameIndex, I_Period);
-        %         end
-        %     end
-        % end
+    elseif parallelMode == 3
+        spmd(2) % Split the code into 2 parallel sections
+            if labindex == 1
+                framesToEncode = 1:2:nFrame; % Frames for thread 1
+            else
+                framesToEncode = 2:2:nFrame; % Frames for thread 2
+            end
+
+            for currentFrameNum = framesToEncode
+                % Determine if the current frame is an I-frame
+                IFrame = rem(currentFrameNum, I_Period) == 1 || I_Period == 1;
+
+                if IFrame
+                    [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
+                        paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
+                        FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
+                
+                else
+                    [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
+                        referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
+                        blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
+                        frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
+                end
+
+                % Update the reconstructed frames
+                reconstructedY(:, :, currentFrameNum) = reconstructedFrame;
+
+                % Synchronization and dependency handling
+                if labindex == 1 && currentFrameNum < nFrame
+                    % Thread 1 sends its last two rows to Thread 2
+                    lastTwoRows = reconstructedY(end-2*blockSize+1:end, :, currentFrameNum);
+                    labSend(lastTwoRows, 2);
+                elseif labindex == 2 && currentFrameNum > 1
+                    % Thread 2 receives the last two rows from Thread 1
+                    lastTwoRows = labReceive(1);
+                    % Update the reference frame in Thread 2 with these rows
+                    referenceFrames = updateReferenceFramesForParallel(referenceFrames, lastTwoRows, blockSize);
+                end
+
+                QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
+                MDiffs(currentFrameNum, 1) = MDiffsFrame;
+                splits(currentFrameNum, 1) = splitFrame;
+                QPFrames(currentFrameNum, 1) = QPFrame;
+            end
+        end
 
     else
     % Original non-parallel processing
@@ -219,7 +222,7 @@ for currentFrameNum = 1:nFrame
         % First frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
+            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -234,7 +237,7 @@ for currentFrameNum = 1:nFrame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
-            frameTotalBits, QPs, statistics, [], zeros(1, heightBlockNum*widthBlockNum));
+            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -298,3 +301,29 @@ for i=1:nFrame
 end
 end
 
+function referenceFrames = updateReferenceFramesForParallel(referenceFrames, lastTwoRows, blockSize)
+    % Update the first reference frame with the last two rows from the previous frame
+
+    % Check if the referenceFrames array is empty
+    if isempty(referenceFrames)
+        error('Reference frames array is empty.');
+    end
+
+    % Extract the size of the reference frames
+    [refHeight, refWidth, ~] = size(referenceFrames);
+
+    % Validate the size of the lastTwoRows
+    [rows, cols, ~] = size(lastTwoRows);
+    if rows ~= 2*blockSize || cols ~= refWidth
+        error('Size of the last two rows does not match the expected dimensions.');
+    end
+
+    % Update the first reference frame
+    % The top 2*blockSize rows are replaced with the lastTwoRows from the previous frame
+    referenceFrames(1:2*blockSize, :, 1) = lastTwoRows;
+
+    % For the remaining rows in the first reference frame, shift them up by 2*blockSize
+    if refHeight > 2*blockSize
+        referenceFrames(2*blockSize+1:end, :, 1) = referenceFrames(1:end-2*blockSize, :, 1);
+    end
+end
