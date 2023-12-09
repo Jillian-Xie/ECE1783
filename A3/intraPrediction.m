@@ -34,6 +34,7 @@ if parallelMode == 3
     end
 
     for heightBlockIndex = startRow:endRow
+        previousMode = int32(0);
         % Budget calculation for rate control
         if RCFlag >= 1
             budget = double(frameTotalBits - actualBitSpent) / double(heightBlockNum - heightBlockIndex + 1);

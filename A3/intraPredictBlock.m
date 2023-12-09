@@ -174,7 +174,8 @@ else
         
         totalBitsNonSplit = 0;
         totalBitsNonSplit = totalBitsNonSplit + strlength(encodedQuantizedBlockNonSplit);
-        totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(modeNonSplit - previousMode)));
+        totalBitsNonSplit = totalBitsNonSplit + strlength(expGolombEncoding(RLE(int32(modeNonSplit) - int32(previousMode))));
+
     
         % for modes
         modesSplitDifferentialEncoded = modesSplit;

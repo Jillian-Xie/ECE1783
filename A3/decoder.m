@@ -742,11 +742,36 @@ function reconstructedFrame = reconstructFrame(QTCCoeff, MDiffFrame, splitFrame,
 end
 
 function [reconstructedBlock, subBlockIndex] = processSplitBlock(QTCCoeff, MDiffFrame, subBlockIndex, blockSize, currentQP, top, left)
-    % Function to process split block
+    % Function to process a split block
     splitSize = blockSize / 2;
-    % ... Implement logic for processing split blocks ...
-    % Update subBlockIndex accordingly
+    
+    % Initialize the reconstructed block
+    reconstructedBlock = int32(zeros(blockSize, blockSize));
+
+    % Process each of the four sub-blocks
+    for subBlockNum = 1:4
+        % Decode the QTCCoeff for the current sub-block
+        encodedQuantizedBlock = QTCCoeff(1, subBlockIndex);
+        approximatedResidualBlock = decodeQTCCoeff(encodedQuantizedBlock, splitSize, currentQP);
+
+        % Place the reconstructed sub-block in the correct position
+        switch subBlockNum
+            case 1 % Top-left
+                reconstructedBlock(1:splitSize, 1:splitSize) = approximatedResidualBlock;
+            case 2 % Top-right
+                reconstructedBlock(1:splitSize, splitSize+1:end) = approximatedResidualBlock;
+            case 3 % Bottom-left
+                reconstructedBlock(splitSize+1:end, 1:splitSize) = approximatedResidualBlock;
+            case 4 % Bottom-right
+                reconstructedBlock(splitSize+1:end, splitSize+1:end) = approximatedResidualBlock;
+        end
+
+        % Increment the subBlockIndex
+        subBlockIndex = subBlockIndex + 1;
+    end
+
     % Return the reconstructed block and updated subBlockIndex
+    return;
 end
 
 function [reconstructedBlock, subBlockIndex] = processNonSplitBlock(QTCCoeff, MDiffFrame, subBlockIndex, blockSize, currentQP)
@@ -764,3 +789,4 @@ function [reconstructedBlock, subBlockIndex] = processNonSplitBlock(QTCCoeff, MD
     % Return the reconstructed block and updated subBlockIndex
     return
 end
+
