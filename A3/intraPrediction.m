@@ -1,6 +1,6 @@
 function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount, avgQP, splitInt] = intraPrediction( ...
     currentFrame, blockSize,QP, VBSEnable, FMEEnable, FastME, RCFlag, ...
-    frameTotalBits, QPs, statistics, perRowBitCountStatistics, previousPassSplitDecision, parallelMode)
+    frameTotalBits, QPs, statistics, perRowBitCountStatistics, previousPassSplitDecision, parallelMode, dQPLimit)
 
 % return values:
 %     splitFrame is to be ignored if VBSEnable == false
@@ -23,140 +23,98 @@ actualBitSpent = int32(0);
 previousQP = 6; % assume QP=6 in the beginning
 avgQP = 0;
 
-if parallelMode == 3
-    % Determine the starting and ending row indices for the current thread
-    if labindex == 1
-        startRow = 1;
-        endRow = heightBlockNum - 1;
-    else
-        startRow = 2;
-        endRow = heightBlockNum;
-    end
-
-    for heightBlockIndex = startRow:endRow
-        previousMode = int32(0);
-        % Budget calculation for rate control
-        if RCFlag >= 1
-            budget = double(frameTotalBits - actualBitSpent) / double(heightBlockNum - heightBlockIndex + 1);
+if parallelMode == 2
+    assert(RCFlag == 0, "only support constant QP under parallel mode");
+    [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame] = ...
+        intraPredictionBlockLevelParallel(height, width, heightBlockNum, widthBlockNum, currentFrame, ...
+                blockSize, QP, VBSEnable, FMEEnable, FastME, getLambda(QP), RCFlag);
+else
+    for heightBlockIndex = 1:heightBlockNum
+        previousMode = int32(0); % assume horizontal in the beginning
+        if RCFlag == 1
+            budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
             [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
+        elseif RCFlag == 2 || RCFlag == 3
+            budget = frameTotalBits * (double(perRowBitCountStatistics(1, heightBlockIndex)) / double(sum(perRowBitCountStatistics, 'all')));
+            [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
+        elseif RCFlag == 4
+            budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
+            [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
+
+            faceDetector = vision.CascadeObjectDetector;
+            bbox = faceDetector(uint8(currentFrame));
+            if ~isempty(bbox)
+                EOIRowStart = bbox(2);
+                EOIRowEnd = bbox(2)+bbox(4);
+    
+                if heightBlockIndex >= floor(EOIRowStart/blockSize) && heightBlockIndex <= ceil(EOIRowEnd/blockSize)
+                    currentQP = currentQP - dQPLimit;
+                else
+                    currentQP = currentQP + dQPLimit;
+                end
+                if currentQP < 0
+                    currentQP = 0;
+                elseif currentQP > 11
+                    currentQP = 11;
+                end
+            end
         else
             currentQP = QP;
         end
         Lambda = getLambda(currentQP);
-
         for widthBlockIndex = 1:widthBlockNum
-            % Get the current block and references for intra-prediction
-            currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame, 0, 0);
-            [verticalReference, horizontalReference] = getIntraPredictionReference(heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize);
-
-            % Intra-prediction for the current block
-            [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock(verticalReference, horizontalReference, currentBlock, blockSize, currentQP, previousMode, VBSEnable, FMEEnable, FastME, Lambda, RCFlag, previousPassSplitDecision(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex));
-
-            % Update the split, coefficients, and modes
+    
+            currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
+    
+            % the left-𝑖 (or top-𝑖) border reconstructed samples
+            [verticalRefernce, horizontalReference] = getIntraPredictionReference( ...
+                heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize ...
+                );
+            [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock( ...
+                verticalRefernce, horizontalReference, currentBlock, blockSize, ...
+                currentQP, previousMode, VBSEnable, FMEEnable, FastME, Lambda, RCFlag, previousPassSplitDecision(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex));
+    
             splitInt = [splitInt, split];
             QTCCoeffsFrame = [QTCCoeffsFrame, encodedQuantizedBlock];
-            MDiffsInt = updateMDiffs(MDiffsInt, mode, previousMode, split, VBSEnable);
-
-            % Update the reconstructed frame with the current block
-            reconstructedFrame((heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize) = reconstructedBlock;
-
-            % Update previous mode
-            previousMode = mode;
+    
+            if VBSEnable && split
+                for i = 1:4
+                    MDiffsInt = [MDiffsInt, xor(mode(1, i), previousMode)]; % 0 = no change, 1 = changed
+                    previousMode = mode(1, i);
+                end
+            else
+                % differential encoding
+                MDiffsInt = [MDiffsInt, xor(mode, previousMode)]; % 0 = no change, 1 = changed
+                previousMode = mode;
+            end
+    
+            reconstructedFrame( ...
+                (heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, ...
+                (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize ...
+                ) = reconstructedBlock;
         end
-
-        % Update QP difference and average QP
+        
+        % Differential encoding
         QPInt = [QPInt, currentQP - previousQP];
         avgQP = avgQP + currentQP;
         previousQP = currentQP;
-
-        % Update bit count for the current row
-        updateBitCount();
-    end
-else
-
-for heightBlockIndex = 1:heightBlockNum
-    previousMode = int32(0); % assume horizontal in the beginning
-    if RCFlag == 1
-        budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
-        [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
-    elseif RCFlag == 2 || RCFlag == 3
-        budget = frameTotalBits * (double(perRowBitCountStatistics(1, heightBlockIndex)) / double(sum(perRowBitCountStatistics, 'all')));
-        [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
-    else
-        currentQP = QP;
-    end
-    Lambda = getLambda(currentQP);
-    for widthBlockIndex = 1:widthBlockNum
-
-        currentBlock = getBlockContent(widthBlockIndex, heightBlockIndex, blockSize, currentFrame,0,0);
-
-        % the left-𝑖 (or top-𝑖) border reconstructed samples
-        [verticalRefernce, horizontalReference] = getIntraPredictionReference( ...
-            heightBlockIndex, widthBlockIndex, reconstructedFrame, blockSize ...
-            );
-        [split, mode, encodedQuantizedBlock, reconstructedBlock] = intraPredictBlock( ...
-            verticalRefernce, horizontalReference, currentBlock, blockSize, ...
-            currentQP, previousMode, VBSEnable, FMEEnable, FastME, Lambda, RCFlag, previousPassSplitDecision(1, (heightBlockIndex - 1) * widthBlockNum + widthBlockIndex));
-
-        splitInt = [splitInt, split];
-        QTCCoeffsFrame = [QTCCoeffsFrame, encodedQuantizedBlock];
-
-        if VBSEnable && split
-            for i = 1:4
-                MDiffsInt = [MDiffsInt, xor(mode(1, i), previousMode)]; % 0 = no change, 1 = changed
-                previousMode = mode(1, i);
-            end
-        else
-            % differential encoding
-            MDiffsInt = [MDiffsInt, xor(mode, previousMode)]; % 0 = no change, 1 = changed
-            previousMode = mode;
-        end
-
-        reconstructedFrame( ...
-            (heightBlockIndex-1)*blockSize+1 : heightBlockIndex*blockSize, ...
-            (widthBlockIndex-1)*blockSize+1 : widthBlockIndex*blockSize ...
-            ) = reconstructedBlock;
+        
+        currentBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
+        actualBitSpentRow = currentBitSpent - actualBitSpent;
+        actualBitSpent = currentBitSpent;
+        perRowBitCount = [perRowBitCount, actualBitSpentRow];
     end
     
-    % Differential encoding
-    QPInt = [QPInt, currentQP - previousQP];
-    avgQP = avgQP + currentQP;
-    previousQP = currentQP;
+    MDiffRLE = RLE(MDiffsInt);
+    MDiffsFrame = expGolombEncoding(MDiffRLE);
     
-    currentBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
-    actualBitSpentRow = currentBitSpent - actualBitSpent;
-    actualBitSpent = currentBitSpent;
-    perRowBitCount = [perRowBitCount, actualBitSpentRow];
-end
-end
-
-MDiffRLE = RLE(MDiffsInt);
-MDiffsFrame = expGolombEncoding(MDiffRLE);
-
-splitRLE = RLE(splitInt);
-splitFrame = expGolombEncoding(splitRLE);
-
-QPRLE = RLE(QPInt);
-QPFrame = expGolombEncoding(QPRLE);
-
-avgQP = avgQP / double(heightBlockNum);
-
+    splitRLE = RLE(splitInt);
+    splitFrame = expGolombEncoding(splitRLE);
+    
+    QPRLE = RLE(QPInt);
+    QPFrame = expGolombEncoding(QPRLE);
+    
+    avgQP = avgQP / double(heightBlockNum);
 end
 
-function MDiffsInt = updateMDiffs(MDiffsInt, mode, previousMode, split, VBSEnable)
-    % Differential encoding of the mode
-    if VBSEnable && split
-        for i = 1:4
-            MDiffsInt = [MDiffsInt, xor(mode(i), previousMode)]; % 0 = no change, 1 = changed
-        end
-    else
-        MDiffsInt = [MDiffsInt, xor(mode, previousMode)]; % 0 = no change, 1 = changed
-    end
-end
-
-function updateBitCount()
-    currentBitSpent = getActualBitSpent(QTCCoeffsFrame, MDiffsInt, splitInt, QPInt);
-    actualBitSpentRow = currentBitSpent - actualBitSpent;
-    actualBitSpent = currentBitSpent;
-    perRowBitCount = [perRowBitCount, actualBitSpentRow];
 end

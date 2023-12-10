@@ -29,6 +29,9 @@ if ~exist(EncoderReconstructOutputPath,'dir')
     mkdir(EncoderReconstructOutputPath)
 end
 
+perRowBitCount = [];
+splitDecision = zeros(1, widthBlockNum * heightBlockNum);
+
 for currentFrameNum = 1:nFrame
     avgQP = QP;
     % copy the RCFlag from the user-specified one, so that we can modify
@@ -222,7 +225,7 @@ for currentFrameNum = 1:nFrame
         % First frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
+            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision, parallelMode);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -237,7 +240,7 @@ for currentFrameNum = 1:nFrame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
-            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
+            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision, parallelMode);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
