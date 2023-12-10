@@ -1,6 +1,6 @@
 function reconstructedY = encoder(yuvInputFileName, nFrame, width, height, ...
     blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, ...
-    FastME, RCFlag, targetBR, frameRate, QPs, statistics)
+    FastME, RCFlag, targetBR, frameRate, QPs, statistics, parallelMode)
 
 [Y,~,~] = importYUV(yuvInputFileName, width, height ,nFrame);
 
@@ -69,7 +69,7 @@ for currentFrameNum = 1:nFrame
         [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~, splitDecision] = interPrediction( ...
                 referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
                 blockSize, r, tempQP, VBSEnable, FMEEnable, FastME, tempRCFlag, ...
-                frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum));
+                frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum), parallelMode);
         
         actualBitSpentPerBlock = actualBitSpent / (widthBlockNum * heightBlockNum);
         if actualBitSpentPerBlock > getSceneChangeThreshold(tempQP)
@@ -96,7 +96,7 @@ for currentFrameNum = 1:nFrame
         end
         [~, ~, ~, ~, ~, actualBitSpent, perRowBitCount, ~, splitDecision] = intraPrediction( ...
                 paddingY(:,:,currentFrameNum), blockSize, tempQP, VBSEnable, ...
-                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum));
+                FMEEnable, FastME, tempRCFlag, frameTotalBits, QPs, statistics, [], zeros(1, widthBlockNum * heightBlockNum), parallelMode);
         
         % update statistics
         intraStatistics = statistics{1};
@@ -111,7 +111,7 @@ for currentFrameNum = 1:nFrame
         % First frame needs to be I frame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = intraPrediction( ...
             paddingY(:,:,currentFrameNum), blockSize, QP, VBSEnable, ...
-            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
+            FMEEnable, FastME, encoderRCFlagFrame, frameTotalBits, QPs, statistics, perRowBitCount, splitDecision, parallelMode);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
@@ -126,7 +126,7 @@ for currentFrameNum = 1:nFrame
         [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, ~, avgQP, ~] = interPrediction( ...
             referenceFrames, interpolateReferenceFrames, paddingY(:,:,currentFrameNum), ...
             blockSize, r, QP, VBSEnable, FMEEnable, FastME, encoderRCFlagFrame, ...
-            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision);
+            frameTotalBits, QPs, statistics, perRowBitCount, splitDecision, parallelMode);
         QTCCoeffs(currentFrameNum, 1:size(QTCCoeffsFrame, 2)) = QTCCoeffsFrame;
         MDiffs(currentFrameNum, 1) = MDiffsFrame;
         splits(currentFrameNum, 1) = splitFrame;
