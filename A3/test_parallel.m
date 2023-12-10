@@ -16,7 +16,7 @@ VBSEnable = true;
 FMEEnable = true;
 FastME = true;
 
-RCFlag = 3;
+RCFlag = 0;
 targetBR = 1140480; % bps
 frameRate = 30;
 
@@ -26,21 +26,12 @@ visualizeMM = true;
 visualizeNRF= true;
 
 % Parallel mode enabled
-parallelMode = 3; % Enable Parallel Mode
+parallelMode = 3;
 
-% Load statistics if RCFlag >= 1
-if RCFlag >= 1
-    statistics = load('CIFStatistics.mat', 'CIFStatistics');
-    statistics = statistics.CIFStatistics;
-else
-    statistics = {};
-end
-
-% Encoder execution with Parallel Mode 1
+% Encoder execution with Parallel Mode
 tic
-reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, ...
-    r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, RCFlag, ...
-    targetBR, frameRate, QPs, statistics, parallelMode);
+reconstructedY = encoder_parallelMode3(yuvInputFileName, nFrame, width, height, ...
+    blockSize, r, QP, I_Period, VBSEnable, FMEEnable, FastME);
 toc
 
 % Load encoder output
@@ -52,5 +43,5 @@ load('QPFrames.mat', 'QPFrames');
 tic
 decoder(nFrame, width, height, blockSize, VBSEnable, FMEEnable, ...
     QTCCoeffs, MDiffs, splits, QPFrames, visualizeVBS, visualizeRGB, visualizeMM, ...
-    visualizeNRF, reconstructedY, parallelMode);
+    visualizeNRF, reconstructedY);
 toc
