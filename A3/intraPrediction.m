@@ -1,6 +1,6 @@
 function [QTCCoeffsFrame, MDiffsFrame, splitFrame, QPFrame, reconstructedFrame, actualBitSpent, perRowBitCount, avgQP, splitInt] = intraPrediction( ...
     currentFrame, blockSize,QP, VBSEnable, FMEEnable, FastME, RCFlag, ...
-    frameTotalBits, QPs, statistics, perRowBitCountStatistics, previousPassSplitDecision, parallelMode)
+    frameTotalBits, QPs, statistics, perRowBitCountStatistics, previousPassSplitDecision, parallelMode, dQPLimit)
 
 % return values:
 %     splitFrame is to be ignored if VBSEnable == false
@@ -37,6 +37,27 @@ else
         elseif RCFlag == 2 || RCFlag == 3
             budget = frameTotalBits * (double(perRowBitCountStatistics(1, heightBlockIndex)) / double(sum(perRowBitCountStatistics, 'all')));
             [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
+        elseif RCFlag == 4
+            budget = double(frameTotalBits-actualBitSpent)/double(heightBlockNum-heightBlockIndex+1);
+            [currentQP, ~] = getCurrentQP(QPs, statistics{1}, int32(budget));
+
+            faceDetector = vision.CascadeObjectDetector;
+            bbox = faceDetector(uint8(currentFrame));
+            if ~isempty(bbox)
+                EOIRowStart = bbox(2);
+                EOIRowEnd = bbox(2)+bbox(4);
+    
+                if heightBlockIndex >= floor(EOIRowStart/blockSize) && heightBlockIndex <= ceil(EOIRowEnd/blockSize)
+                    currentQP = currentQP - dQPLimit;
+                else
+                    currentQP = currentQP + dQPLimit;
+                end
+                if currentQP < 0
+                    currentQP = 0;
+                elseif currentQP > 11
+                    currentQP = 11;
+                end
+            end
         else
             currentQP = QP;
         end

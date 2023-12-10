@@ -16,14 +16,15 @@ VBSEnable = true;
 FMEEnable = true;
 FastME = true;
 
-RCFlag = 0;
+RCFlag = 4;
 targetBR = 1140480; % bps
 frameRate = 30;
-parallelMode = 2;
+parallelMode = 0;
+dQPLimit = 2;
 % parpool(2);
 
 visualizeVBS = VBSEnable && false;
-visualizeRGB = false;
+visualizeRGB = true;
 visualizeMM = false;
 visualizeNRF= false;
 statistics = [];
@@ -83,7 +84,7 @@ end
 tic
 reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, ...
     r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, RCFlag, ...
-    targetBR, frameRate, QPs, statistics, parallelMode);
+    targetBR, frameRate, QPs, statistics, parallelMode, dQPLimit);
 toc
 
 load('QTCCoeffs.mat', 'QTCCoeffs');
