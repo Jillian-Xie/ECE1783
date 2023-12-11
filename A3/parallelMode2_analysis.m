@@ -14,9 +14,10 @@ VBSEnable = true;
 FMEEnable = true;
 FastME = true;
 RCFlag = 0;
-targetBR = 1140480; % bps
+targetBR = 2400000; % bps
 frameRate = 30;
 dQPLimit = 2;
+statistics = [];
 
 % Initialize arrays for storing results
 results = struct();
@@ -28,12 +29,12 @@ nConfigs = length(configurations);
 
 % Load the original Y component for PSNR calculation
 [YOriginal, ~, ~] = importYUV(yuvInputFileName, width, height, nFrame);
-
+parpool(2);
 % Loop for each configuration
 for cfgIdx = 1:nConfigs
     config = configurations(cfgIdx);
     
-    if config.cores > 0 && config.mode == 2
+    if config.cores > 0
         parpool(config.cores);
     end
 
@@ -48,11 +49,13 @@ for cfgIdx = 1:nConfigs
         % Select and run the encoder function based on parallel mode
         tic; % Start timing
         if config.mode == 0
-            reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, RCFlag, targetBR, frameRate, QPs, {}, 0, dQPLimit);
+            reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, ...
+                r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, RCFlag, ...
+                targetBR, frameRate, QPs, statistics, 0, dQPLimit);
         else
-            % Assuming 'statistics' variable is set up as required
-            statistics = {}; % Placeholder, replace with actual statistics setup if needed
-            reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, RCFlag, targetBR, frameRate, QPs, statistics, config.mode, dQPLimit);
+            reconstructedY = encoder(yuvInputFileName, nFrame, width, height, blockSize, ...
+                r, QP, I_Period, nRefFrames, VBSEnable, FMEEnable, FastME, RCFlag, ...
+                targetBR, frameRate, QPs, statistics, 2, dQPLimit);
         end
         elapsedTime = toc; % End timing
 
@@ -89,22 +92,53 @@ for cfgIdx = 1:nConfigs
     results(cfgIdx).bitSizes = totalBitSizes;
     results(cfgIdx).encodingTimes = encodingTimes;
 
-    if config.cores > 0 && config.mode == 2
+    if config.cores > 0
         delete(gcp('nocreate'));
     end
 end
 
-% Printing Encoding Time and Bit Count Comparisons
-fprintf('Encoding Time and Bit Count Comparisons:\n');
+% Plotting
+figure;
+subplot(2,1,1); % PSNR and Bit Size plot
+hold on;
+subplot(2,1,2); % Encoding Time plot
+hold on;
+
+colors = ['b', 'r', 'g', 'k']; % Different colors for different plots
+legendEntries = {};
+
+% Plot for each configuration
 for cfgIdx = 1:nConfigs
     config = results(cfgIdx);
-    fprintf('Parallel Mode: %d, Cores: %d\n', config.mode, config.cores);
-    for qpIdx = 1:length(QPs)
-        fprintf('QP: %d, Encoding Time: %.2f seconds, Bit Count: %d bits\n', ...
-                QPs(qpIdx), config.encodingTimes(qpIdx), config.bitSizes(qpIdx));
+    colorIdx = mod(cfgIdx - 1, length(colors)) + 1;
+    plotStyle = sprintf('%s-*', colors(colorIdx));
+
+    subplot(2,1,1);
+    plot(config.bitSizes, config.psnr, plotStyle);
+
+    subplot(2,1,2);
+    plot(QPs, config.encodingTimes, plotStyle);
+
+    if config.mode == 0
+        legendEntries{end+1} = 'Parallel Mode 0';
+    else
+        legendEntries{end+1} = sprintf('Parallel Mode 1, %d Workers', config.cores);
     end
-    fprintf('\n');
 end
+
+subplot(2,1,1);
+title('RD-Plots for Different Parallel Modes and Core Counts');
+xlabel('Total Bit Size (bits)');
+ylabel('PSNR (dB)');
+legend(legendEntries, 'Location', 'southeast');
+
+subplot(2,1,2);
+title('Encoding Times for Different Parallel Modes and Core Counts');
+xlabel('QP');
+ylabel('Encoding Time (s)');
+legend(legendEntries, 'Location', 'northeast');
+
+hold off;
 
 % Function to calculate total bit size
 function totalBits = calculateBitSize(QTCCoeffs, MDiffs, splits, nFrame)
