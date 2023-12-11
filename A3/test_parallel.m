@@ -2,7 +2,7 @@ clc; clear; close all;
 
 % config info
 yuvInputFileName = 'CIF.yuv';
-nFrame = 3;
+nFrame = 10;
 width  = uint32(352);
 height = uint32(288);
 blockSize = 16;
@@ -26,12 +26,12 @@ visualizeMM = true;
 visualizeNRF= true;
 
 % Parallel mode enabled
-parallelMode = 3;
+parallelMode = 1;
 
 % Encoder execution with Parallel Mode
 tic
-reconstructedY = encoder_parallelMode3(yuvInputFileName, nFrame, width, height, ...
-    blockSize, r, QP, I_Period, VBSEnable, FMEEnable, FastME);
+reconstructedY = encoder_parallelMode1(yuvInputFileName, nFrame, width, height, ...
+    blockSize, QP)
 toc
 
 % Load encoder output

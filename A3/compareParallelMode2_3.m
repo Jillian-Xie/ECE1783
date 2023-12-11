@@ -1,5 +1,5 @@
 clc; clear; close all;
-
+parpool(4);
 yuvInputFileName = 'CIF.yuv';
 nFrame = 21;
 width  = uint32(352);
@@ -10,7 +10,7 @@ QP = 5;
 I_Period = 10;
 RCFlag = 0;
 QPs = [0 1 2 3 4 5 6 7 8 9 10 11];
-targetBR = 1140480;
+targetBR = 2400000;
 frameRate = 30;
 nRefFrames = 1;
 
@@ -57,6 +57,8 @@ isIdenticalType3 = isequal(encodedStreams{1}, encodedStreams{3});
 
 fprintf('Encoded stream is identical in Type 2 and Type 0: %s\n', boolToYesNo(isIdenticalType2));
 fprintf('Encoded stream is identical in Type 3 and Type 0: %s\n', boolToYesNo(isIdenticalType3));
+
+delete(gcp('nocreate'));
 
 function yesNoStr = boolToYesNo(boolVal)
     if boolVal
